@@ -52,6 +52,34 @@ def _looks_like_ofx(filename: str | None, content: str) -> bool:
     return "OFXHEADER" in head or "<OFX>" in head or "<STMTTRN>" in head
 
 
+from services.number_parse import (
+    AmbiguousNumberFormatError,
+    DateParseError,
+    NumberParseConfig,
+    NumberParseError,
+    parse_date_flexible,
+    parse_money,
+)
+
+
+def _detect_delimiter(content: str, default: str = ",") -> str:
+    """Detect whether CSV uses comma, semicolon or tab."""
+    first_lines = [line for line in content.splitlines()[:5] if line.strip()]
+    if not first_lines:
+        return default
+    sample = "\n".join(first_lines)
+    counts = {
+        ";": sample.count(";"),
+        ",": sample.count(","),
+        "\t": sample.count("\t"),
+    }
+    if counts[";"] > counts[","] and counts[";"] >= len(first_lines):
+        return ";"
+    if counts["\t"] > counts[","] and counts["\t"] >= len(first_lines):
+        return "\t"
+    return default
+
+
 def _parse_csv(
     content: str,
     *,
@@ -61,10 +89,17 @@ def _parse_csv(
     credit_col: str = "credit",
     amount_col: str | None = None,
     balance_col: str = "balance",
-) -> list[dict]:
-    reader = csv.DictReader(io.StringIO(content))
+    delimiter: str | None = None,
+    decimal_separator: str | None = None,
+    thousands_separator: str | None = None,
+    date_format: str | None = None,
+    sign_convention: str = "auto",
+    collect_errors: bool = False,
+):
+    eff_delim = delimiter if delimiter else _detect_delimiter(content)
+    reader = csv.DictReader(io.StringIO(content), delimiter=eff_delim)
     if not reader.fieldnames:
-        return []
+        return ([], []) if collect_errors else []
     # Normalise header → original for lookup
     headers = { (h or "").strip().lower(): (h or "").strip() for h in reader.fieldnames }
 
@@ -85,32 +120,78 @@ def _parse_csv(
     amount_key = col(amount_col) if amount_col else None
     balance_key = col(balance_col)
 
+    num_cfg = NumberParseConfig(
+        decimal_separator=decimal_separator,  # type: ignore[arg-type]
+        thousands_separator=thousands_separator,  # type: ignore[arg-type]
+        sign_convention=sign_convention,  # type: ignore[arg-type]
+        allow_empty=True,
+    )
+
     rows: list[dict] = []
-    for raw in reader:
-        date_v = (raw.get(d_key) or "").strip()
+    errors: list[dict] = []
+
+    for idx, raw in enumerate(reader):
+        row_num = idx + 2  # 1-indexed header is row 1
+        date_raw = (raw.get(d_key) or "").strip()
         desc_v = (raw.get(desc_key) or "").strip()
-        if not date_v or not desc_v:
+        if not date_raw and not desc_v:
             continue
+        if not date_raw or not desc_v:
+            err = f"Row {row_num}: Missing required date or description"
+            if collect_errors:
+                errors.append({"row": row_num, "error": err, "raw": raw})
+                continue
+            raise HTTPException(400, err)
+
+        try:
+            date_v = parse_date_flexible(date_raw, format_hint=date_format)
+        except DateParseError as exc:
+            err = f"Row {row_num}: Invalid date '{date_raw}' ({exc})"
+            if collect_errors:
+                errors.append({"row": row_num, "error": err, "raw": raw})
+                continue
+            raise HTTPException(400, err) from exc
+
         debit = ZERO
         credit = ZERO
-        if amount_key:
-            amt = D((raw.get(amount_key) or "0").replace(",", "") or 0)
-            if amt < ZERO:
-                debit = abs(amt)
+        bal = ZERO
+
+        try:
+            if amount_key:
+                raw_amt = raw.get(amount_key)
+                amt = parse_money(raw_amt, num_cfg)
+                if amt < ZERO:
+                    debit = abs(amt)
+                else:
+                    credit = amt
             else:
-                credit = amt
-        else:
-            debit = D((raw.get(debit_key) or "0").replace(",", "") or 0) if debit_key else ZERO
-            credit = D((raw.get(credit_key) or "0").replace(",", "") or 0) if credit_key else ZERO
-        bal = D((raw.get(balance_key) or "0").replace(",", "") or 0) if balance_key else ZERO
+                raw_deb = raw.get(debit_key) if debit_key else None
+                raw_crd = raw.get(credit_key) if credit_key else None
+                debit = parse_money(raw_deb, num_cfg) if raw_deb else ZERO
+                credit = parse_money(raw_crd, num_cfg) if raw_crd else ZERO
+
+            if balance_key:
+                raw_bal = raw.get(balance_key)
+                bal = parse_money(raw_bal, num_cfg) if raw_bal else ZERO
+
+        except (NumberParseError, AmbiguousNumberFormatError) as exc:
+            err = f"Row {row_num}: Number parse error ({exc})"
+            if collect_errors:
+                errors.append({"row": row_num, "error": err, "raw": raw})
+                continue
+            raise HTTPException(400, err) from exc
+
         rows.append({
-            "date": date_v[:10],
+            "date": date_v,
             "description": desc_v[:500],
             "debit": debit,
             "credit": credit,
             "balance": bal,
             "external_id": None,
         })
+
+    if collect_errors:
+        return rows, errors
     return rows
 
 
@@ -142,8 +223,8 @@ def _add_lines(session, user, imp: BankStatementImport, rows: list[dict]) -> int
     return inserted
 
 
-@router.post("/api/bank-imports", status_code=201)
-async def upload_bank_statement(
+@router.post("/api/bank-imports/preview")
+async def preview_bank_statement(
     session: SessionDep, user: WriteUserDep,
     bank_account_id: int = Form(...),
     file: UploadFile = File(...),
@@ -153,6 +234,11 @@ async def upload_bank_statement(
     credit_col: str = Form("credit"),
     amount_col: Optional[str] = Form(None),
     balance_col: str = Form("balance"),
+    delimiter: Optional[str] = Form(None),
+    decimal_separator: Optional[str] = Form(None),
+    thousands_separator: Optional[str] = Form(None),
+    date_format: Optional[str] = Form(None),
+    sign_convention: str = Form("auto"),
 ):
     acct = session.exec(
         select(BankAccount).where(
@@ -165,6 +251,115 @@ async def upload_bank_statement(
 
     raw_bytes = await file.read()
     file_hash = hashlib.sha256(raw_bytes).hexdigest()
+
+    existing = session.exec(
+        select(BankStatementImport).where(
+            BankStatementImport.tenant_id == user.tenant_id,
+            BankStatementImport.bank_account_id == bank_account_id,
+            BankStatementImport.file_hash == file_hash,
+        )
+    ).first()
+    if existing:
+        raise HTTPException(409, f"This file was already imported as #{existing.id}")
+
+    try:
+        content = raw_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        raise HTTPException(400, "Upload must be UTF-8 text (CSV or OFX/QFX)")
+
+    filename = file.filename or "statement.csv"
+    is_ofx = _looks_like_ofx(filename, content)
+
+    if is_ofx:
+        try:
+            rows = parse_ofx(content)
+            errors = []
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+    else:
+        try:
+            rows, errors = _parse_csv(
+                content,
+                date_col=date_col,
+                description_col=description_col,
+                debit_col=debit_col,
+                credit_col=credit_col,
+                amount_col=amount_col or None,
+                balance_col=balance_col,
+                delimiter=delimiter,
+                decimal_separator=decimal_separator,
+                thousands_separator=thousands_separator,
+                date_format=date_format,
+                sign_convention=sign_convention,
+                collect_errors=True,
+            )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(400, f"CSV parse error: {exc}") from exc
+
+    total_debit = sum((D(r["debit"]) for r in rows), ZERO)
+    total_credit = sum((D(r["credit"]) for r in rows), ZERO)
+
+    return {
+        "file_name": filename,
+        "file_hash": file_hash,
+        "format": "ofx" if is_ofx else "csv",
+        "total_rows": len(rows) + len(errors),
+        "valid_rows": len(rows),
+        "error_count": len(errors),
+        "error_rows": errors[:50],
+        "total_debit": money(total_debit),
+        "total_credit": money(total_credit),
+        "preview_lines": [
+            {
+                "date": r["date"],
+                "description": r["description"],
+                "debit": float(r["debit"]),
+                "credit": float(r["credit"]),
+                "balance": float(r["balance"]),
+            }
+            for r in rows[:10]
+        ],
+    }
+
+
+@router.post("/api/bank-imports", status_code=201)
+async def upload_bank_statement(
+    session: SessionDep, user: WriteUserDep,
+    bank_account_id: int = Form(...),
+    file: UploadFile = File(...),
+    date_col: str = Form("date"),
+    description_col: str = Form("description"),
+    debit_col: str = Form("debit"),
+    credit_col: str = Form("credit"),
+    amount_col: Optional[str] = Form(None),
+    balance_col: str = Form("balance"),
+    delimiter: Optional[str] = Form(None),
+    decimal_separator: Optional[str] = Form(None),
+    thousands_separator: Optional[str] = Form(None),
+    date_format: Optional[str] = Form(None),
+    sign_convention: str = Form("auto"),
+    expected_hash: Optional[str] = Form(None),
+):
+    acct = session.exec(
+        select(BankAccount).where(
+            BankAccount.id == bank_account_id,
+            BankAccount.tenant_id == user.tenant_id,
+        )
+    ).first()
+    if not acct:
+        raise HTTPException(404, "Bank account not found")
+
+    raw_bytes = await file.read()
+    file_hash = hashlib.sha256(raw_bytes).hexdigest()
+
+    if expected_hash and file_hash != expected_hash:
+        raise HTTPException(
+            400,
+            f"File hash mismatch: expected {expected_hash}, got {file_hash}. "
+            "The file changed since preview.",
+        )
 
     existing = session.exec(
         select(BankStatementImport).where(
@@ -199,6 +394,12 @@ async def upload_bank_statement(
                 credit_col=credit_col,
                 amount_col=amount_col or None,
                 balance_col=balance_col,
+                delimiter=delimiter,
+                decimal_separator=decimal_separator,
+                thousands_separator=thousands_separator,
+                date_format=date_format,
+                sign_convention=sign_convention,
+                collect_errors=False,
             )
         except HTTPException:
             raise

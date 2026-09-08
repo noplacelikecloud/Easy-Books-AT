@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from models import (
     Account, Bill, BillLine, BillPayment, Budget, CitAdjustment, Customer,
     Invoice, InvoiceLine, JournalEntry, PaymentAllocation, PaymentReceived,
-    Product, ProductCategory, TaxCode, Transaction, Vendor,
+    Product, ProductCategory, Settings, TaxCode, Tenant, Transaction, Vendor,
 )
 from services.account_tree import build_account_tree
 from services.export_utils import stream_csv, stream_xlsx
@@ -1479,16 +1479,39 @@ def tax_summary(
         ).all()
         return sum((D(getattr(e, side)) for e in entries), ZERO)
 
-    gst_payable_accts = [
-        a for a in accounts if a.code == "2200" or "gst payable" in a.name.lower()
-    ]
-    output_gst = sum((period_total(a, "credit") for a in gst_payable_accts), ZERO)
+    tax_codes = session.exec(
+        select(TaxCode).where(TaxCode.tenant_id == user.tenant_id)
+    ).all()
+    output_acct_ids = {tc.gl_account_id for tc in tax_codes if tc.type == "output"}
+    input_acct_ids = {tc.gl_account_id for tc in tax_codes if tc.type == "input"}
 
-    gst_input_accts = [
-        a for a in accounts if a.code in ("1200", "1250") or "gst receivable" in a.name.lower()
-    ]
-    input_gst = sum((period_total(a, "debit") for a in gst_input_accts), ZERO)
+    if output_acct_ids:
+        gst_payable_accts = [a for a in accounts if a.id in output_acct_ids]
+    else:
+        gst_payable_accts = [
+            a for a in accounts
+            if a.code == "2200" or any(kw in a.name.lower() for kw in ("gst payable", "vat payable", "output vat", "output tax", "umsatzsteuer"))
+        ]
 
+    if input_acct_ids:
+        gst_input_accts = [a for a in accounts if a.id in input_acct_ids]
+    else:
+        gst_input_accts = [
+            a for a in accounts
+            if a.code == "1250" or (
+                a.code != "1200" and any(kw in a.name.lower() for kw in ("gst receivable", "vat receivable", "input vat", "input tax", "vorsteuer"))
+            )
+        ]
+
+    # Netting: liability output tax = credit - debit; asset input tax = debit - credit
+    output_gst = sum(
+        (period_total(a, "credit") - period_total(a, "debit") for a in gst_payable_accts),
+        ZERO,
+    )
+    input_gst = sum(
+        (period_total(a, "debit") - period_total(a, "credit") for a in gst_input_accts),
+        ZERO,
+    )
     net_gst = output_gst - input_gst
 
     revenue = sum(
@@ -1503,15 +1526,34 @@ def tax_summary(
     )
     taxable_income = revenue - expenses
 
-    def income_tax_ito(income: Decimal) -> Decimal:
-        if income <= 600000: return ZERO
-        if income <= 1200000: return (income - 600000) * D("0.05")
-        if income <= 2400000: return D("30000") + (income - 1200000) * D("0.15")
-        if income <= 3600000: return D("210000") + (income - 2400000) * D("0.25")
-        if income <= 6000000: return D("510000") + (income - 3600000) * D("0.30")
-        return D("1230000") + (income - 6000000) * D("0.35")
+    # Pakistan ITO income tax is strictly restricted to Pakistan jurisdiction
+    tenant = session.get(Tenant, user.tenant_id)
+    country_setting = session.exec(
+        select(Settings).where(
+            Settings.tenant_id == user.tenant_id,
+            Settings.key == "country",
+        )
+    ).first()
+    country_val = (country_setting.value if country_setting else "").strip().upper()
+    is_pk = (
+        country_val in ("PK", "PAKISTAN")
+        or (tenant and tenant.business_model == "pra_einvoice")
+    )
 
-    estimated_income_tax = income_tax_ito(max(ZERO, taxable_income))
+    if is_pk:
+        def income_tax_ito(income: Decimal) -> Decimal:
+            if income <= 600000: return ZERO
+            if income <= 1200000: return (income - 600000) * D("0.05")
+            if income <= 2400000: return D("30000") + (income - 1200000) * D("0.15")
+            if income <= 3600000: return D("210000") + (income - 2400000) * D("0.25")
+            if income <= 6000000: return D("510000") + (income - 3600000) * D("0.30")
+            return D("1230000") + (income - 6000000) * D("0.35")
+
+        estimated_income_tax = income_tax_ito(max(ZERO, taxable_income))
+        tax_basis = "ITO 2001 — Non-salaried individual slabs (FY 2024-25)"
+    else:
+        estimated_income_tax = ZERO
+        tax_basis = "Country-specific income tax estimate not configured"
 
     return {
         "period": {"start": start, "end": end},
@@ -1525,7 +1567,7 @@ def tax_summary(
             "expenses": expenses,
             "taxable_income": taxable_income,
             "estimated_tax": estimated_income_tax,
-            "tax_basis": "ITO 2001 — Non-salaried individual slabs (FY 2024-25)",
+            "tax_basis": tax_basis,
         },
     }
 
@@ -2653,12 +2695,26 @@ def cit_worksheet(
     start: str = Query(default=""),
     end: str = Query(default=""),
     fiscal_year: Optional[str] = None,
-    tax_rate: Decimal = Query(default=Decimal("29")),
+    tax_rate: Optional[Decimal] = Query(default=None),
 ):
     """Management CIT worksheet: accounting profit + manual adjustments.
 
-    Not a filing return — estimated tax uses a flat ``tax_rate`` (default 29%).
+    Not a filing return — estimated tax uses flat ``tax_rate`` (defaults to jurisdiction rate).
     """
+    if tax_rate is None:
+        country_setting = session.exec(
+            select(Settings).where(
+                Settings.tenant_id == user.tenant_id,
+                Settings.key == "country",
+            )
+        ).first()
+        c_val = (country_setting.value if country_setting else "").strip().upper()
+        if c_val in ("AT", "AUSTRIA"):
+            tax_rate = Decimal("23")  # Austrian Corporate Income Tax (KSt § 22 KStG)
+        elif c_val in ("PK", "PAKISTAN"):
+            tax_rate = Decimal("29")
+        else:
+            tax_rate = Decimal("25")
     if not start:
         start = f"{DateType.today().year}-01-01"
     if not end:

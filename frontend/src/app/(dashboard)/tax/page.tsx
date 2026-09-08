@@ -68,7 +68,11 @@ export default function TaxReports() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-xl sm:text-3xl font-bold">Tax Reports</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">GST returns and income tax estimate — Pakistan ITO 2001</p>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            {data?.income_tax?.tax_basis?.includes("ITO")
+              ? "GST returns and income tax estimate — Pakistan ITO 2001"
+              : "Tax return summary and income tax overview"}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="p-3 bg-white border border-[var(--border)] rounded-xl">
@@ -91,18 +95,18 @@ export default function TaxReports() {
         <>
           {/* GST Section */}
           <div className="bg-white rounded-xl border border-[var(--border)] p-8">
-            <h2 className="text-lg font-semibold mb-6 pb-3 border-b border-[var(--border)]">GST Return Summary</h2>
+            <h2 className="text-lg font-semibold mb-6 pb-3 border-b border-[var(--border)]">Tax Return Summary</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="bg-[var(--bg-page)] rounded-xl p-4 text-center">
-                <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest mb-1">Output GST (Sales)</p>
+                <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest mb-1">Output Tax (Sales)</p>
                 <p className="text-xl font-bold font-mono text-red-600">{fmt(data.gst.output_gst)}</p>
               </div>
               <div className="bg-[var(--bg-page)] rounded-xl p-4 text-center">
-                <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest mb-1">Input GST (Purchases)</p>
+                <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest mb-1">Input Tax (Purchases)</p>
                 <p className="text-xl font-bold font-mono text-green-600">{fmt(data.gst.input_gst)}</p>
               </div>
               <div className={`rounded-xl p-4 text-center ${data.gst.net_gst_payable > 0 ? 'bg-red-50' : 'bg-green-50'}`}>
-                <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest mb-1">Net GST Payable</p>
+                <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest mb-1">Net Tax Payable</p>
                 <p className={`text-xl font-bold font-mono ${data.gst.net_gst_payable > 0 ? 'text-red-700' : 'text-green-700'}`}>
                   {fmt(data.gst.net_gst_payable)}
                 </p>
@@ -110,15 +114,15 @@ export default function TaxReports() {
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                <span>Output GST (account 2200 credits)</span>
+                <span>Output Tax / GST (Liability)</span>
                 <span className="font-mono">{fmt(data.gst.output_gst)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-[var(--border)]">
-                <span>Less: Input GST (account 1200 debits)</span>
+                <span>Less: Input Tax / Vorsteuer (Asset)</span>
                 <span className="font-mono">({fmt(data.gst.input_gst)})</span>
               </div>
               <div className="flex justify-between py-3 font-semibold text-base">
-                <span>Net GST Payable to FBR</span>
+                <span>Net Tax Payable</span>
                 <span className={`font-mono ${data.gst.net_gst_payable > 0 ? 'text-red-600' : 'text-green-600'}`}>
                   {fmt(data.gst.net_gst_payable)}
                 </span>
@@ -155,10 +159,12 @@ export default function TaxReports() {
               </div>
             </div>
 
-            <div className="mt-6 text-xs text-[var(--text-muted)] bg-amber-50 border border-amber-100 rounded-lg p-3">
-              Tax slabs: 0–600K @ 0% | 600K–1.2M @ 5% | 1.2M–2.4M @ 15% | 2.4M–3.6M @ 25% | 3.6M–6M @ 30% | above 6M @ 35%.
-              This is an estimate only. Consult a tax advisor for filing.
-            </div>
+            {data.income_tax.tax_basis?.includes("ITO") && (
+              <div className="mt-6 text-xs text-[var(--text-muted)] bg-amber-50 border border-amber-100 rounded-lg p-3">
+                Tax slabs: 0–600K @ 0% | 600K–1.2M @ 5% | 1.2M–2.4M @ 15% | 2.4M–3.6M @ 25% | 3.6M–6M @ 30% | above 6M @ 35%.
+                This is an estimate only. Consult a tax advisor for filing.
+              </div>
+            )}
           </div>
         </>
       )}
