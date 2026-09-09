@@ -620,6 +620,11 @@
     "tenant": "services"
   },
   {
+    "id": "services--tax-austria",
+    "path": "/tax/austria",
+    "tenant": "services"
+  },
+  {
     "id": "services--reports-wht",
     "path": "/reports/wht",
     "tenant": "services"
