@@ -28,6 +28,7 @@ class CNLineCreate(BaseModel):
     qty: Decimal = Decimal("1")
     unit: Optional[str] = None
     rate: Decimal = Decimal("0")
+    tax_treatment_code: Optional[str] = None
 
 
 class CNCreate(BaseModel):
@@ -45,6 +46,7 @@ class CNCreate(BaseModel):
     exchange_rate: Optional[Decimal] = None
     gst_amount: Decimal = Decimal("0")   # GST-output to reverse (sales return)
     restock: bool = True                 # restock stock-product lines (sales return)
+    tax_treatment_code: Optional[str] = None
 
 
 @router.get("")
@@ -115,7 +117,11 @@ def create_credit_note(session: SessionDep, user: WriteUserDep, body: CNCreate):
     gst = money(D(str(body.gst_amount)))   # GST-output to reverse (sales return)
     total = money(subtotal + gst)
 
-    number = next_number(session, user.tenant_id, "credit_note", "CN")
+    from localizations.at.profile import is_at_compliance_active
+    at_active = is_at_compliance_active(session, user.tenant_id, body.issue_date)
+    if at_active and (not inv or inv.lifecycle_status != "finalized"):
+        raise HTTPException(409, "AT-Gutschriften benötigen eine finalisierte Ursprungsrechnung.")
+    number = f"DRAFT-CN-{__import__('uuid').uuid4().hex[:10].upper()}" if at_active else next_number(session, user.tenant_id, "credit_note", "CN")
 
     cn = CreditNote(
         tenant_id=user.tenant_id,
@@ -132,6 +138,9 @@ def create_credit_note(session: SessionDep, user: WriteUserDep, body: CNCreate):
         currency=currency,
         exchange_rate=exchange_rate,
         status="draft",
+        original_document_id=body.invoice_id,
+        original_document_type="invoice" if body.invoice_id else None,
+        tax_treatment_code=body.tax_treatment_code,
     )
     session.add(cn)
     session.flush()
@@ -146,8 +155,15 @@ def create_credit_note(session: SessionDep, user: WriteUserDep, body: CNCreate):
                 unit=ln.unit,
                 rate=D(ln.rate),
                 amount=money(D(ln.qty) * D(ln.rate)),
+                tax_treatment_code=ln.tax_treatment_code,
             )
         )
+
+    if at_active:
+        log_audit(session, user, "CREATE", "credit_note", cn.id, {"number": number, "lifecycle_status": "draft"})
+        session.commit()
+        session.refresh(cn)
+        return cn
 
     # GL posting (value side): Dr Revenue (+ Dr GST Payable) / Cr AR
     fx = exchange_rate
@@ -246,3 +262,9 @@ def create_credit_note(session: SessionDep, user: WriteUserDep, body: CNCreate):
     session.commit()
     session.refresh(cn)
     return cn
+
+
+@router.post("/{cn_id}/finalize")
+def finalize_credit_note_endpoint(session: SessionDep, user: WriteUserDep, cn_id: int):
+    from services.document_lifecycle import finalize_credit_note
+    return finalize_credit_note(session, user, cn_id)

@@ -237,7 +237,7 @@ function LabPageInner() {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold mb-4">New Lab Order</h2>
-            <form onSubmit={createOrder} className="space-y-3">
+            <form noValidate onSubmit={createOrder} className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Patient *</label>
                 <select required value={form.patient_id}

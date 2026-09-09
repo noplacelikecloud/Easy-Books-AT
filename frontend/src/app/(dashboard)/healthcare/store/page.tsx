@@ -180,7 +180,7 @@ export default function HcStorePage() {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold mb-4">Issue Stock</h2>
-            <form onSubmit={createIssue} className="space-y-3">
+            <form noValidate onSubmit={createIssue} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-neutral-600 mb-1">Date</label>

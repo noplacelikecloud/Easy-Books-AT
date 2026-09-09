@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    body { color: #1d2329; font: 10.5pt Arial, sans-serif; margin: 34px 42px; }
+    header { border-bottom: 2px solid #9b772d; display: flex; justify-content: space-between; padding-bottom: 18px; }
+    h1 { color: #765718; font-size: 25pt; margin: 0; }
+    h2 { font-size: 9pt; letter-spacing: .08em; margin: 24px 0 5px; text-transform: uppercase; }
+    .meta { line-height: 1.55; text-align: right; }
+    .parties { display: flex; gap: 36px; }
+    .party { flex: 1; line-height: 1.45; }
+    table { border-collapse: collapse; margin-top: 22px; width: 100%; }
+    th { background: #f2eee5; border-bottom: 1px solid #9b772d; font-size: 8pt; padding: 7px; text-align: left; }
+    td { border-bottom: 1px solid #ddd8ce; padding: 8px 7px; vertical-align: top; }
+    .number { font-variant-numeric: tabular-nums; text-align: right; }
+    .totals { margin: 14px 0 0 auto; width: 270px; }
+    .totals div { display: flex; justify-content: space-between; padding: 3px 0; }
+    .totals .gross { border-top: 2px solid #1d2329; font-size: 12pt; font-weight: bold; margin-top: 5px; padding-top: 7px; }
+    .notice { border-left: 3px solid #9b772d; margin-top: 22px; padding: 8px 11px; }
+    footer { border-top: 1px solid #ddd8ce; color: #5b636a; font-size: 8.5pt; margin-top: 34px; padding-top: 9px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div><strong>{{ issuer.name }}</strong><br>{{ issuer.address }}<br>UID: {{ issuer.vat_id or '—' }}</div>
+    <div class="meta"><h1>Rechnung</h1><strong>{{ invoice.number }}</strong><br>Ausgestellt: {{ invoice.issue_date }}<br>Fällig: {{ invoice.due_date }}</div>
+  </header>
+  <div class="parties">
+    <div class="party"><h2>Leistender Unternehmer</h2>{{ issuer.name }}<br>{{ issuer.address }}{% if issuer.company_register_number %}<br>{{ issuer.company_register_number }}, {{ issuer.company_register_court }}{% endif %}</div>
+    <div class="party"><h2>Rechnungsempfänger</h2>{{ recipient.name }}<br>{{ recipient.address }}{% if recipient.vat_id %}<br>UID: {{ recipient.vat_id }}{% endif %}</div>
+  </div>
+  <p><strong>Leistungsdatum/-zeitraum:</strong> {{ invoice.service_date_start }}{% if invoice.service_date_end and invoice.service_date_end != invoice.service_date_start %} bis {{ invoice.service_date_end }}{% endif %}</p>
+  <table>
+    <thead><tr><th>Leistung</th><th class="number">Menge</th><th class="number">Einzelpreis</th><th class="number">Steuersatz</th><th class="number">Netto</th><th class="number">USt</th></tr></thead>
+    <tbody>{% for line in lines %}<tr><td>{{ line.description }}</td><td class="number">{{ "%.2f"|format(line.qty|float) }}</td><td class="number">{{ "%.2f"|format(line.rate|float) }}</td><td class="number">{{ "%.1f"|format(line.tax_rate|float) }} %</td><td class="number">{{ "%.2f"|format(line.amount|float) }}</td><td class="number">{{ "%.2f"|format(line.tax_amount|float) }}</td></tr>{% endfor %}</tbody>
+  </table>
+  <div class="totals"><div><span>Netto</span><span>{{ "%.2f"|format(invoice.subtotal|float) }} {{ invoice.currency }}</span></div><div><span>Umsatzsteuer</span><span>{{ "%.2f"|format(invoice.gst_amount|float) }} {{ invoice.currency }}</span></div><div class="gross"><span>Gesamt</span><span>{{ "%.2f"|format(invoice.total|float) }} {{ invoice.currency }}</span></div></div>
+  {% if invoice.notes %}<div class="notice">{{ invoice.notes }}</div>{% endif %}
+  <footer>Unveränderliche Belegausgabe · Dokumentstand bei Finalisierung · SHA-256 im Belegarchiv</footer>
+</body>
+</html>

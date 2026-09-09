@@ -91,7 +91,7 @@ export default function SignupPage() {
             <strong>System → Add-ons</strong> after you sign in.
           </p>
 
-          <form onSubmit={handleSignup} className="space-y-4">
+          <form noValidate onSubmit={handleSignup} className="space-y-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-[#1a1814]/40 mb-1">
                 Full Name

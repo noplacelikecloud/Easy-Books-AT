@@ -33,6 +33,7 @@ class DNLineCreate(BaseModel):
     qty: Decimal = Decimal("1")
     unit: Optional[str] = None
     rate: Decimal = Decimal("0")
+    tax_treatment_code: Optional[str] = None
 
 
 class DNCreate(BaseModel):
@@ -48,6 +49,7 @@ class DNCreate(BaseModel):
     # None → inherit from linked bill, else tenant base @ 1 (#300)
     currency: Optional[str] = None
     exchange_rate: Optional[Decimal] = None
+    tax_treatment_code: Optional[str] = None
 
 
 @router.get("")
@@ -109,7 +111,11 @@ def create_debit_note(session: SessionDep, user: WriteUserDep, body: DNCreate):
     gst = money(D(str(body.gst_amount)))
     total = money(subtotal + gst)
 
-    number = next_number(session, user.tenant_id, "debit_note", "DN")
+    from localizations.at.profile import is_at_compliance_active
+    at_active = is_at_compliance_active(session, user.tenant_id, body.issue_date)
+    if at_active and bill.lifecycle_status != "finalized":
+        raise HTTPException(409, "AT-Lieferantengutschriften benötigen eine finalisierte Ursprungsrechnung.")
+    number = f"DRAFT-DN-{__import__('uuid').uuid4().hex[:10].upper()}" if at_active else next_number(session, user.tenant_id, "debit_note", "DN")
 
     dn = DebitNote(
         tenant_id=user.tenant_id, number=number, bill_id=bill.id,
@@ -117,6 +123,8 @@ def create_debit_note(session: SessionDep, user: WriteUserDep, body: DNCreate):
         description=body.description, notes=body.notes, subtotal=subtotal,
         gst_amount=gst, total=total, currency=currency,
         exchange_rate=exchange_rate, status="draft",
+        original_document_id=bill.id, original_document_type="bill",
+        tax_treatment_code=body.tax_treatment_code,
     )
     session.add(dn)
     session.flush()
@@ -127,8 +135,15 @@ def create_debit_note(session: SessionDep, user: WriteUserDep, body: DNCreate):
                 debit_note_id=dn.id, product_id=ln.product_id,
                 description=ln.description, qty=D(ln.qty), unit=ln.unit,
                 rate=D(ln.rate), amount=money(D(ln.qty) * D(ln.rate)),
+                tax_treatment_code=ln.tax_treatment_code,
             )
         )
+
+    if at_active:
+        log_audit(session, user, "CREATE", "debit_note", dn.id, {"number": number, "lifecycle_status": "draft"})
+        session.commit()
+        session.refresh(dn)
+        return dn
 
     fx = exchange_rate
     gst_base = money(gst * fx)
@@ -200,3 +215,9 @@ def create_debit_note(session: SessionDep, user: WriteUserDep, body: DNCreate):
     session.commit()
     session.refresh(dn)
     return dn
+
+
+@router.post("/{dn_id}/finalize")
+def finalize_debit_note_endpoint(session: SessionDep, user: WriteUserDep, dn_id: int):
+    from services.document_lifecycle import finalize_debit_note
+    return finalize_debit_note(session, user, dn_id)

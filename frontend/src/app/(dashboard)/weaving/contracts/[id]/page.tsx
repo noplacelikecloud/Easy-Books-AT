@@ -194,7 +194,7 @@ export default function ContractDetailPage() {
         <div className="sm:col-span-2">
           <div className="text-xs text-[var(--text-muted)] mb-1">Notes</div>
           {editing ? (
-            <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={input} rows={2} />
+            <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={`${input} resize-none`} rows={2} />
           ) : (
             <div>{c.notes || "—"}</div>
           )}

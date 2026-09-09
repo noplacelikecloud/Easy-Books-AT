@@ -149,7 +149,7 @@ export default function DispatchPage() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 print:hidden">
-          <form onSubmit={submit} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] w-full max-w-lg p-5 space-y-3">
+          <form noValidate onSubmit={submit} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] w-full max-w-lg p-5 space-y-3">
             <h2 className="text-lg font-semibold">New Yarn Dispatch</h2>
             {err && <p className="text-sm text-red-600">{err}</p>}
             <div className="grid grid-cols-2 gap-3">

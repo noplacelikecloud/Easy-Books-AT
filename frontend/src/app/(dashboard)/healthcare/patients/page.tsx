@@ -147,7 +147,7 @@ export default function PatientsPage() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
             <h2 className="text-lg font-semibold mb-4">Register New Patient</h2>
             {err && <div className="mb-3 text-red-600 text-sm">{err}</div>}
-            <form onSubmit={createPatient} className="space-y-3">
+            <form noValidate onSubmit={createPatient} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-neutral-600 mb-1">Full Name *</label>

@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react"
 import Link from "next/link"
-import { RotateCcw, Receipt, Pencil, History, CheckCircle, CheckCircle2 } from "lucide-react"
+import { Ban, RotateCcw, Receipt, Pencil, History, CheckCircle, CheckCircle2 } from "lucide-react"
 import { useBreadcrumb } from "@/context/BreadcrumbContext"
 import { apiFetch } from "@/lib/api"
 import { useFmt, useSettings } from "@/context/SettingsContext"
@@ -55,6 +55,7 @@ interface Bill {
   exchange_rate: number
   carrying_rate?: number | null
   status: string
+  lifecycle_status?: "draft" | "finalized" | "cancelled" | "corrected"
   approval_status: string | null
   transaction_id: number | null
   lines: BillLine[]
@@ -76,6 +77,8 @@ export default function BillDetailPage({ params }: { params: Promise<{ id: strin
   const [history, setHistory] = useState<AuditEntry[]>([])
   const [hasApprovalWorkflow, setHasApprovalWorkflow] = useState(false)
   const [pdfBusy, setPdfBusy] = useState(false)
+  const [atActive, setAtActive] = useState(false)
+  const [cancelReason, setCancelReason] = useState("")
   useBreadcrumb(bill ? bill.number : undefined)
 
   const load = () =>
@@ -95,6 +98,12 @@ export default function BillDetailPage({ params }: { params: Promise<{ id: strin
     apiFetch<{ is_active?: boolean }[]>(`/api/approvals/workflows?document_type=bill`)
       .then((rows) => setHasApprovalWorkflow(rows.some((w) => w.is_active !== false)))
       .catch(() => setHasApprovalWorkflow(false))
+  }, [])
+
+  useEffect(() => {
+    apiFetch<{ active: boolean }>("/api/at/profile")
+      .then((result) => setAtActive(result.active))
+      .catch(() => setAtActive(false))
   }, [])
 
   const submitForApproval = async () => {
@@ -158,6 +167,41 @@ export default function BillDetailPage({ params }: { params: Promise<{ id: strin
     }
   }
 
+  const finalizeAtBill = async () => {
+    setBusy(true); setError(null)
+    try {
+      await apiFetch(`/api/bills/${id}/finalize`, { method: "POST" })
+      toast("Eingangsrechnung festgeschrieben", "success")
+      await load()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Eingangsrechnung konnte nicht festgeschrieben werden.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const cancelAtBill = async () => {
+    if (!bill || !cancelReason.trim()) return
+    const ok = await confirm({
+      title: `Eingangsrechnung ${bill.number} stornieren?`,
+      message: `Es wird eine Gegenbuchung erstellt. Grund: ${cancelReason.trim()}`,
+      confirmLabel: "Eingangsrechnung stornieren",
+      danger: true,
+    })
+    if (!ok) return
+    setBusy(true); setError(null)
+    try {
+      await apiFetch(`/api/bills/${id}/cancel`, { method: "POST", body: JSON.stringify({ reason: cancelReason.trim() }) })
+      toast("Eingangsrechnung storniert", "success")
+      setCancelReason("")
+      await load()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Eingangsrechnung konnte nicht storniert werden.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (error && !bill) return <p className="p-4 text-red-700 text-sm">{error}</p>
   if (!bill)          return <p className="p-4 text-[var(--text-primary)]/60 text-sm">Loading bill…</p>
 
@@ -165,7 +209,7 @@ export default function BillDetailPage({ params }: { params: Promise<{ id: strin
     <div className="max-w-4xl mx-auto space-y-4">
       <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex items-center gap-2">
-          {(bill.status === "draft" || bill.status === "received" || bill.status === "overdue") && (
+          {(!atActive || bill.lifecycle_status === "draft") && (bill.status === "draft" || bill.status === "received" || bill.status === "overdue") && (
             <Link
               href={`/bills/${bill.id}/edit`}
               className="inline-flex items-center gap-1.5 px-3 py-2 border border-[var(--primary)]/50 text-[var(--primary)] rounded-lg text-sm font-bold hover:bg-[var(--bg-page)]"
@@ -181,7 +225,7 @@ export default function BillDetailPage({ params }: { params: Promise<{ id: strin
               <Pencil className="w-4 h-4" /> Edit
             </span>
           )}
-          {bill.status === "draft" && (
+          {!atActive && bill.status === "draft" && (
             <button
               onClick={markReceived}
               disabled={busy}
@@ -214,7 +258,12 @@ export default function BillDetailPage({ params }: { params: Promise<{ id: strin
             }}
             pdfBusy={pdfBusy}
           />
-          {bill.transaction_id && bill.status !== "reversed" && (
+          {atActive && bill.lifecycle_status === "draft" && (
+            <button onClick={finalizeAtBill} disabled={busy} className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[var(--primary)] px-3 py-2 text-sm font-bold text-white hover:bg-[var(--primary-dark)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+              <CheckCircle className="h-4 w-4" aria-hidden="true" /> {busy ? "Wird festgeschrieben …" : "Festschreiben"}
+            </button>
+          )}
+          {!atActive && bill.transaction_id && bill.status !== "reversed" && (
             <button onClick={reverse} disabled={busy}
               className="inline-flex items-center gap-1.5 px-3 py-2 border border-[var(--border)] rounded-lg text-sm font-bold hover:bg-red-50 hover:text-red-700 disabled:opacity-50">
               <RotateCcw className="w-4 h-4" /> {busy ? "Reversing…" : "Reverse"}
@@ -222,6 +271,15 @@ export default function BillDetailPage({ params }: { params: Promise<{ id: strin
           )}
         </div>
       </div>
+
+      {atActive && bill.lifecycle_status === "finalized" && (
+        <section className="qb-card flex flex-col gap-3 border-l-4 border-l-amber-500 p-4 sm:flex-row sm:items-end">
+          <label className="flex-1 text-sm font-semibold">Stornogrund
+            <input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Konkreten Grund für die Gegenbuchung angeben" className="mt-1 w-full rounded-lg border border-[var(--border)] px-3 py-2 font-normal outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" />
+          </label>
+          <button type="button" onClick={cancelAtBill} disabled={busy || !cancelReason.trim()} className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-red-200 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"><Ban className="h-4 w-4" aria-hidden="true" /> Stornieren</button>
+        </section>
+      )}
 
       <header className="bg-white border border-[var(--border)] rounded-xl p-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">

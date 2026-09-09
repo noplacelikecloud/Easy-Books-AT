@@ -95,7 +95,7 @@ export function ActionForm({
   }
 
   return (
-    <form onSubmit={submit} className="bg-white border border-[var(--border)] rounded-2xl p-4 space-y-3">
+    <form noValidate onSubmit={submit} className="bg-white border border-[var(--border)] rounded-2xl p-4 space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {fields.map(f => (
           <label key={f.name} className="block">

@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { AlertTriangle, Plus, Trash2, Check, X } from "lucide-react"
 import { apiFetch } from "@/lib/api"
 import { useMessages } from "@/context/MessageContext"
@@ -181,8 +180,8 @@ export default function ScrapReasonsPage() {
               <tr>
                 <td colSpan={4} className="px-4 py-8 text-center text-sm text-[var(--text-primary)]/50">
                   No reason codes yet.{" "}
-                  <Link href="#" onClick={e => { e.preventDefault(); setEdit(empty()); setEditingId("new") }}
-                    className="text-[var(--primary)] hover:underline">Add one</Link>
+                  <button type="button" onClick={() => { setEdit(empty()); setEditingId("new") }}
+                    className="text-[var(--primary)] hover:underline">Add one</button>
                 </td>
               </tr>
             )}

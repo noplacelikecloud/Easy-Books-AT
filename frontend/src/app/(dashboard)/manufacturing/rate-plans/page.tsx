@@ -294,7 +294,7 @@ Absorption (into WIP at PO start):
                 {editingPlan ? `Edit ${editingPlan.code}` : "New Rate Plan"}
               </h2>
             </div>
-            <form onSubmit={handlePlanSave} className="px-6 py-5 space-y-4">
+            <form noValidate onSubmit={handlePlanSave} className="px-6 py-5 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--text-primary)]/70 mb-1.5 uppercase tracking-wide">Code</label>
@@ -391,7 +391,7 @@ Absorption (into WIP at PO start):
                 Any prior active assignment for the customer will be replaced.
               </p>
             </div>
-            <form onSubmit={handleAssign} className="px-6 py-5 space-y-4">
+            <form noValidate onSubmit={handleAssign} className="px-6 py-5 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-primary)]/70 mb-1.5 uppercase tracking-wide">{t('col.customer', 'Customer')}</label>
                 <select value={assignCustomer} onChange={e => setAssignCustomer(e.target.value)}

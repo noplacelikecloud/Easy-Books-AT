@@ -184,7 +184,7 @@ export default function DoctorsPage() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
             <h2 className="text-lg font-semibold mb-4">{editing ? "Edit Doctor" : "Add Doctor"}</h2>
             {err && <div className="mb-3 text-red-600 text-sm">{err}</div>}
-            <form onSubmit={save} className="space-y-3">
+            <form noValidate onSubmit={save} className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Full Name *</label>
                 <input

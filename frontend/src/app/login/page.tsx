@@ -156,7 +156,7 @@ function LoginForm() {
         </div>
 
         {needsTotp ? (
-          <form onSubmit={verifyTotp} className="space-y-4 bg-white/60 border border-[#1a1814]/10 rounded-2xl p-6">
+          <form noValidate onSubmit={verifyTotp} className="space-y-4 bg-white/60 border border-[#1a1814]/10 rounded-2xl p-6">
             <p className="text-sm text-[#1a1814]/80">Enter the 6-digit code from your authenticator app.</p>
             <input
               className="w-full border border-[#1a1814]/15 rounded-lg px-3 py-2 tracking-widest text-center text-lg"
@@ -177,7 +177,7 @@ function LoginForm() {
             </button>
           </form>
         ) : (
-          <form onSubmit={handleLogin} className="space-y-4 bg-white/60 border border-[#1a1814]/10 rounded-2xl p-6">
+          <form noValidate onSubmit={handleLogin} className="space-y-4 bg-white/60 border border-[#1a1814]/10 rounded-2xl p-6">
             <div>
               <label className="block text-xs font-medium text-[#1a1814]/70 mb-1">Email</label>
               <input

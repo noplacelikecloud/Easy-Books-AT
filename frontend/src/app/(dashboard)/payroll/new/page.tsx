@@ -67,7 +67,7 @@ export default function NewPayrollRunPage() {
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-5">
+      <form noValidate onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-5">
         <div>
           <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
             Period Start <span className="text-red-500">*</span>

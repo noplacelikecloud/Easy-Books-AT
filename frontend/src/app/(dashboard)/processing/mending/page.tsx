@@ -64,7 +64,7 @@ export default function MendingPage() {
         Ready (Safi) = Grey − L-Kami − Rejection − Safai (mending loss). Posting issues Pakki Parchi and Rejection Note.
       </p>
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <form onSubmit={create} className="grid grid-cols-2 md:grid-cols-3 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
+      <form noValidate onSubmit={create} className="grid grid-cols-2 md:grid-cols-3 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
         <select className={input} value={form.lot_id} onChange={e => setForm({ ...form, lot_id: e.target.value })} required>
           <option value="">Lot…</option>
           {lots.filter(l => l.status === "received" || l.status === "mending").map(l => (

@@ -160,7 +160,7 @@ function WeavingCalculatorInner() {
               <textarea
                 value={overrideReason}
                 onChange={e => setOverrideReason(e.target.value)}
-                className={inputCls}
+                className={`${inputCls} resize-none`}
                 rows={2}
                 placeholder="Why proceed despite the mismatch?"
               />

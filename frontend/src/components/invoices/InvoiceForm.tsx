@@ -7,7 +7,7 @@ import { DimensionPickers, slotsToPayload, type AnalyticSlots } from '@/componen
 import CurrencyRatePicker from '@/components/fx/CurrencyRatePicker'
 import { useFmt, useSettings } from '@/context/SettingsContext'
 import { usePRAPortal } from '@/hooks/usePRAPortal'
-import LineItemsTable, { LineItem, TaxCodeOption } from '@/components/LineItemsTable'
+import LineItemsTable, { LineItem, TaxCodeOption, TaxTreatmentOption } from '@/components/LineItemsTable'
 import { CustomFieldsInputs, type CustomFieldValues } from '@/components/studio/CustomFieldsInputs'
 import { useFormSchema } from '@/components/studio/formSchema'
 
@@ -29,6 +29,9 @@ export interface InvoiceFull {
   analytic_account_id: number | null
   currency: string
   exchange_rate: number
+  service_date_start?: string | null
+  service_date_end?: string | null
+  tax_treatment_code?: string | null
   assigned_to_id: number | null
   payment_mode: number | null
   buyer_ntn?: string | null
@@ -36,7 +39,7 @@ export interface InvoiceFull {
   is_intercompany?: boolean
   ic_counterparty_tenant_id?: number | null
   custom_fields?: CustomFieldValues
-  lines: (LineItem & { tax_code_id?: number | null })[]
+  lines: (LineItem & { tax_code_id?: number | null; tax_treatment_code?: string | null })[]
 }
 
 interface Customer { id: number; name: string; ntn?: string | null; cnic?: string | null }
@@ -68,6 +71,9 @@ interface FormState {
   buyer_cnic: string
   is_intercompany: boolean
   ic_counterparty_tenant_id: string
+  service_date_start: string
+  service_date_end: string
+  tax_treatment_code: string
 }
 
 const emptyForm: FormState = {
@@ -78,6 +84,27 @@ const emptyForm: FormState = {
   assigned_to_id: '', payment_mode: '1',
   buyer_ntn: '', buyer_cnic: '',
   is_intercompany: false, ic_counterparty_tenant_id: '',
+  service_date_start: '', service_date_end: '', tax_treatment_code: 'AT_STANDARD_20',
+}
+
+const AT_SALES_TREATMENTS: TaxTreatmentOption[] = [
+  { code: 'AT_STANDARD_20', label: '20 % Normalsteuersatz' },
+  { code: 'AT_REDUCED_13', label: '13 % ermäßigter Satz' },
+  { code: 'AT_REDUCED_10', label: '10 % ermäßigter Satz' },
+  { code: 'AT_REDUCED_4_9', label: '4,9 % begünstigte Waren' },
+  { code: 'AT_EXEMPT_KU', label: 'Kleinunternehmer steuerfrei' },
+  { code: 'AT_ZERO_IG_SUPPLY', label: 'Innergemeinschaftliche Lieferung' },
+  { code: 'AT_RC_EU_SERVICE_OUT', label: 'EU-B2B-Dienstleistung / Reverse Charge' },
+  { code: 'AT_ZERO_EXPORT', label: 'Ausfuhrlieferung' },
+  { code: 'AT_RC_DOMESTIC', label: 'Inländischer Reverse Charge' },
+]
+
+function chargedAtRate(code: string): number {
+  if (code.startsWith('AT_ZERO_') || code.startsWith('AT_RC_') || code === 'AT_EXEMPT_KU') return 0
+  if (code.includes('4_9')) return 4.9
+  if (code.includes('REDUCED_13')) return 13
+  if (code.includes('REDUCED_10')) return 10
+  return code === 'AT_STANDARD_20' ? 20 : 0
 }
 
 interface Props {
@@ -111,6 +138,7 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
   const [promoMsg, setPromoMsg] = useState("")
   const [icCounterparties, setIcCounterparties] = useState<IcCounterparty[]>([])
   const [customFields, setCustomFields] = useState<CustomFieldValues>({})
+  const [atActive, setAtActive] = useState(false)
   const { fields: schemaFields, fieldAccess, visible: vis, required: req } = useFormSchema('invoice')
   const currencyTouched = useRef(false)
 
@@ -119,8 +147,16 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
     if (mode === 'create' && !currencyTouched.current) {
       setForm(f => ({ ...f, currency: settings.currency }))
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.currency])
+  }, [mode, settings.currency])
+
+  useEffect(() => {
+    apiFetch<{ active: boolean }>('/api/at/profile')
+      .then(result => {
+        setAtActive(result.active)
+        if (result.active && mode === 'create') setForm(current => ({ ...current, gst_rate: '20' }))
+      })
+      .catch(() => setAtActive(false))
+  }, [mode])
 
   useEffect(() => {
     Promise.all([
@@ -170,6 +206,9 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
         is_intercompany: Boolean(invoice.is_intercompany),
         ic_counterparty_tenant_id: invoice.ic_counterparty_tenant_id
           ? String(invoice.ic_counterparty_tenant_id) : '',
+        service_date_start: invoice.service_date_start ?? '',
+        service_date_end: invoice.service_date_end ?? '',
+        tax_treatment_code: invoice.tax_treatment_code ?? 'AT_STANDARD_20',
       })
       setCustomFields(invoice.custom_fields ?? {})
       setAnalyticSlots({
@@ -190,6 +229,7 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
         discount_pct: Number((l as LineItem).discount_pct ?? 0),
         amount: Number(l.amount),
         tax_code_id: l.tax_code_id ?? null,
+        tax_treatment_code: l.tax_treatment_code ?? null,
         ssp: (l as LineItem).ssp ?? null,
       })))
     }
@@ -204,9 +244,11 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
         return s + (tc ? Math.round(l.amount * tc.rate / 100 * 100) / 100 : 0)
       }, 0)
     : 0
-  const gstAmount = usePerLineTax
-    ? perLineTaxTotal
-    : Math.round(subtotal * (parseFloat(form.gst_rate) || 0) / 100 * 100) / 100
+  const gstAmount = atActive
+    ? Math.round(lines.reduce((sum, line) => sum + line.amount * chargedAtRate(line.tax_treatment_code || form.tax_treatment_code) / 100, 0) * 100) / 100
+    : usePerLineTax
+      ? perLineTaxTotal
+      : Math.round(subtotal * (parseFloat(form.gst_rate) || 0) / 100 * 100) / 100
   const totalAmount = Math.round((subtotal + gstAmount) * 100) / 100
 
   const arAccounts = accounts.filter(a => a.type === 'Asset')
@@ -293,6 +335,9 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
       description: form.description || null,
       notes: form.notes || null,
       internal_memo: form.internal_memo || null,
+      service_date_start: form.service_date_start || null,
+      service_date_end: form.service_date_end || null,
+      tax_treatment_code: atActive ? form.tax_treatment_code : null,
       lines: lines.map(l => ({
         product_id: l.product_id ?? null,
         description: l.description,
@@ -302,6 +347,7 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
         discount_pct: l.discount_pct ?? 0,
         promo_rule_id: l.promo_rule_id ?? null,
         tax_code_id: l.tax_code_id ?? null,
+        tax_treatment_code: atActive ? (l.tax_treatment_code || form.tax_treatment_code) : null,
         ssp: l.ssp ?? null,
       })),
       gst_rate: parseFloat(form.gst_rate) || 0,
@@ -563,6 +609,28 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
         />
         )}
 
+        {atActive && (
+          <section className="grid grid-cols-1 gap-4 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary-light)]/45 p-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Steuerbehandlung</label>
+              <select required value={form.tax_treatment_code} onChange={e => { const code = e.target.value; const rate = code.includes('4_9') ? '4.9' : code.includes('REDUCED_13') ? '13' : code.includes('REDUCED_10') ? '10' : code === 'AT_STANDARD_20' ? '20' : '0'; setForm(p => ({ ...p, tax_treatment_code: code, gst_rate: rate })) }} className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--primary)]">
+                <option value="AT_STANDARD_20">20 % Normalsteuersatz</option>
+                <option value="AT_REDUCED_13">13 % ermäßigter Satz</option>
+                <option value="AT_REDUCED_10">10 % ermäßigter Satz</option>
+                <option value="AT_REDUCED_4_9">4,9 % begünstigte Waren</option>
+                <option value="AT_EXEMPT_KU">Kleinunternehmer steuerfrei</option>
+                <option value="AT_ZERO_IG_SUPPLY">Innergemeinschaftliche Lieferung</option>
+                <option value="AT_RC_EU_SERVICE_OUT">EU-B2B-Dienstleistung / Reverse Charge</option>
+                <option value="AT_ZERO_EXPORT">Ausfuhrlieferung</option>
+                <option value="AT_RC_DOMESTIC">Inländischer Reverse Charge</option>
+              </select>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">Gilt für alle Positionen dieser Rechnung.</p>
+            </div>
+            <div><label className="mb-1 block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Leistung von</label><input type="date" value={form.service_date_start} onChange={e => setForm(p => ({ ...p, service_date_start: e.target.value }))} className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--primary)]" /></div>
+            <div><label className="mb-1 block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Leistung bis</label><input type="date" min={form.service_date_start || undefined} value={form.service_date_end} onChange={e => setForm(p => ({ ...p, service_date_end: e.target.value }))} className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--primary)]" /></div>
+          </section>
+        )}
+
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Line Items</label>
@@ -574,7 +642,7 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
               </button>
             </div>
           </div>
-          <LineItemsTable lines={lines} onChange={setLines} products={products} taxCodes={taxCodes.filter(t => t.type === 'output')} showTax showStockHint warnOversell customerId={form.customer_id ? Number(form.customer_id) : null} priceKind="sale" hideDiscount={!vis('discount_pct')} />
+          <LineItemsTable lines={lines} onChange={setLines} products={products} taxCodes={taxCodes.filter(t => t.type === 'output')} taxTreatments={atActive ? AT_SALES_TREATMENTS : []} showTax={!atActive} showStockHint warnOversell customerId={form.customer_id ? Number(form.customer_id) : null} priceKind="sale" hideDiscount={!vis('discount_pct')} />
         </div>
 
         <div className="bg-[var(--bg-page)] rounded-xl p-4 space-y-1 text-sm">
@@ -584,7 +652,9 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
           </div>
           <div className="flex justify-between items-center gap-2">
             <span className="text-[var(--text-muted)]">Tax</span>
-            {usePerLineTax ? (
+            {atActive ? (
+              <span className="font-mono text-xs text-[var(--text-muted)]">(nach AT-Steuerbehandlung) {fmt(gstAmount)}</span>
+            ) : usePerLineTax ? (
               <span className="font-mono text-xs text-[var(--text-muted)]">(per-line) {fmt(gstAmount)}</span>
             ) : vis('gst_rate') ? (
               <div className="flex items-center gap-2">

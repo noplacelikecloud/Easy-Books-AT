@@ -378,15 +378,24 @@ def create_payment_received(
         inv = session.get(Invoice, a.invoice_id)
         if not inv or inv.tenant_id != user.tenant_id:
             raise HTTPException(400, f"Invoice {a.invoice_id} not found for tenant")
-        session.add(
-            PaymentAllocation(
-                tenant_id=user.tenant_id,
-                payment_received_id=pmt.id,
-                invoice_id=inv.id,
-                amount=money(a.amount),
-            )
+        allocation = PaymentAllocation(
+            tenant_id=user.tenant_id,
+            payment_received_id=pmt.id,
+            invoice_id=inv.id,
+            amount=money(a.amount),
         )
+        session.add(allocation)
         session.flush()
+        from services.at_tax_events import create_tax_events_for_invoice_payment
+        create_tax_events_for_invoice_payment(
+            session=session,
+            invoice=inv,
+            payment_id=pmt.id,
+            allocation_id=allocation.id,
+            allocation_amount=allocation.amount,
+            payment_date=body.payment_date,
+            transaction_id=txn.id,
+        )
         _refresh_invoice_status(session, inv)
 
     emit(session, user.tenant_id, "payment.received", {

@@ -65,6 +65,7 @@ interface Invoice {
   exchange_rate: number
   carrying_rate?: number | null
   status: string
+  lifecycle_status?: "draft" | "finalized" | "cancelled" | "corrected"
   approval_status: string | null
   transaction_id: number | null
   lines: InvoiceLine[]
@@ -210,6 +211,8 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
   const [disputes, setDisputes] = useState<PortalDispute[]>([])
   const [hasApprovalWorkflow, setHasApprovalWorkflow] = useState(false)
   const [pdfBusy, setPdfBusy] = useState(false)
+  const [atActive, setAtActive] = useState(false)
+  const [cancelReason, setCancelReason] = useState("")
   useBreadcrumb(inv ? inv.number : undefined)
 
   const load = () =>
@@ -234,6 +237,12 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
     apiFetch<{ is_active?: boolean }[]>(`/api/approvals/workflows?document_type=invoice`)
       .then((rows) => setHasApprovalWorkflow(rows.some((w) => w.is_active !== false)))
       .catch(() => setHasApprovalWorkflow(false))
+  }, [])
+
+  useEffect(() => {
+    apiFetch<{ active: boolean }>("/api/at/profile")
+      .then((result) => setAtActive(result.active))
+      .catch(() => setAtActive(false))
   }, [])
 
   const submitForApproval = async () => {
@@ -318,6 +327,41 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
     }
   }
 
+  const finalizeAtInvoice = async () => {
+    setBusy(true); setError(null)
+    try {
+      await apiFetch(`/api/invoices/${id}/finalize`, { method: "POST" })
+      toast("Rechnung festgeschrieben", "success")
+      await load()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Rechnung konnte nicht festgeschrieben werden.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const cancelAtInvoice = async () => {
+    if (!inv || !cancelReason.trim()) return
+    const ok = await confirm({
+      title: `Rechnung ${inv.number} stornieren?`,
+      message: `Es wird eine Gegenbuchung erstellt. Grund: ${cancelReason.trim()}`,
+      confirmLabel: "Rechnung stornieren",
+      danger: true,
+    })
+    if (!ok) return
+    setBusy(true); setError(null)
+    try {
+      await apiFetch(`/api/invoices/${id}/cancel?reason=${encodeURIComponent(cancelReason.trim())}`, { method: "POST" })
+      toast("Rechnung storniert", "success")
+      setCancelReason("")
+      await load()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Rechnung konnte nicht storniert werden.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (error && !inv) return <p className="p-4 text-red-700 text-sm">{error}</p>
   if (!inv)           return <p className="p-4 text-[var(--text-primary)]/60 text-sm">Loading invoice…</p>
 
@@ -326,7 +370,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex items-center gap-2">
-          {(inv.status === "draft" || inv.status === "sent" || inv.status === "posted" || inv.status === "overdue") && (
+          {(!atActive || inv.lifecycle_status === "draft") && (inv.status === "draft" || inv.status === "sent" || inv.status === "posted" || inv.status === "overdue") && (
             <Link
               href={`/invoices/${inv.id}/edit`}
               className="inline-flex items-center gap-1.5 px-3 py-2 border border-[var(--primary)]/50 text-[var(--primary)] rounded-lg text-sm font-bold hover:bg-[var(--bg-page)]"
@@ -342,7 +386,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               <Pencil className="w-4 h-4" /> Edit
             </span>
           )}
-          {inv.status === "draft" && (
+          {!atActive && inv.status === "draft" && (
             <button
               onClick={markSent}
               disabled={busy}
@@ -365,6 +409,11 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
             }}
             pdfBusy={pdfBusy}
           />
+          {atActive && inv.lifecycle_status === "draft" && (
+            <button onClick={finalizeAtInvoice} disabled={busy} className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[var(--primary)] px-3 py-2 text-sm font-bold text-white hover:bg-[var(--primary-dark)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+              <FileSignature className="h-4 w-4" aria-hidden="true" /> {busy ? "Wird festgeschrieben …" : "Festschreiben"}
+            </button>
+          )}
           {isPortal && inv.pra_fiscal_number && (
             <Link
               href={`/invoices/${inv.id}/receipt`}
@@ -373,7 +422,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               <Printer className="w-4 h-4" /> Print Receipt
             </Link>
           )}
-          {inv.status !== "paid" && (
+          {(!atActive || inv.lifecycle_status === "finalized") && inv.status !== "paid" && (
             <button
               onClick={async () => {
                 try {
@@ -400,7 +449,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               <CheckCircle2 className="w-4 h-4" /> Submit for approval
             </button>
           )}
-          {(inv.status === "draft" || inv.status === "sent") && (
+          {!atActive && (inv.status === "draft" || inv.status === "sent") && (
             <button
               onClick={voidInvoice}
               disabled={busy}
@@ -408,7 +457,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
             >
               <Ban className="w-4 h-4" />{t('status.void', 'Void')}</button>
           )}
-          {inv.transaction_id && inv.status !== "reversed" && (
+          {!atActive && inv.transaction_id && inv.status !== "reversed" && (
             <button
               onClick={reverse}
               disabled={busy}
@@ -419,6 +468,15 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
           )}
         </div>
       </div>
+
+      {atActive && inv.lifecycle_status === "finalized" && (
+        <section className="qb-card flex flex-col gap-3 border-l-4 border-l-amber-500 p-4 sm:flex-row sm:items-end">
+          <label className="flex-1 text-sm font-semibold">Stornogrund
+            <input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Konkreten Grund für die Gegenbuchung angeben" className="mt-1 w-full rounded-lg border border-[var(--border)] px-3 py-2 font-normal outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" />
+          </label>
+          <button type="button" onClick={cancelAtInvoice} disabled={busy || !cancelReason.trim()} className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-red-200 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"><Ban className="h-4 w-4" aria-hidden="true" /> Stornieren</button>
+        </section>
+      )}
 
       {/* Header */}
       <header className="bg-white border border-[var(--border)] rounded-xl p-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">

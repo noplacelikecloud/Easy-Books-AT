@@ -175,7 +175,7 @@ export default function ProcessingSetupPage() {
 
       {tab === "qualities" && (
         <div className="space-y-4">
-          <form onSubmit={addQuality} className="space-y-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
+          <form noValidate onSubmit={addQuality} className="space-y-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
             <p className="text-xs font-medium text-[var(--text-muted)]">
               CODE STRUCTURE → <span className="font-mono text-[var(--text-primary)]">{previewCode(qForm) || "CTN 60X60 40X52 45\""}</span>
             </p>
@@ -224,7 +224,7 @@ export default function ProcessingSetupPage() {
 
       {tab === "processes" && (
         <div className="space-y-4">
-          <form onSubmit={saveProcess} className="grid grid-cols-2 md:grid-cols-6 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
+          <form noValidate onSubmit={saveProcess} className="grid grid-cols-2 md:grid-cols-6 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
             {editProc ? (
               <>
                 <input className={input} type="number" value={editProc.seq} onChange={e => setEditProc({ ...editProc, seq: Number(e.target.value) })} />
@@ -283,7 +283,7 @@ export default function ProcessingSetupPage() {
 
       {tab === "contractors" && (
         <div className="space-y-4">
-          <form onSubmit={saveContractor} className="grid grid-cols-2 md:grid-cols-5 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
+          <form noValidate onSubmit={saveContractor} className="grid grid-cols-2 md:grid-cols-5 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
             {editContr ? (
               <>
                 <input className={input} value={editContr.code} onChange={e => setEditContr({ ...editContr, code: e.target.value })} />

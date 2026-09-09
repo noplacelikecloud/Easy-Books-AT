@@ -253,7 +253,7 @@ export default function Sidebar({ open, onClose, pinned, onTogglePinned }: Sideb
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-2 scrollbar-hide">
+        <nav className="flex-1 overflow-y-auto py-2">
           {SECTIONS.map(section => {
             const collapsed = collapsedSections.has(section)
             const sectionItems = visibleNav.filter(i => i.section === section)

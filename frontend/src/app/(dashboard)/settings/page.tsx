@@ -280,7 +280,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Tab bar — scroll on narrow screens so tabs never clip */}
-      <div className="overflow-x-auto scrollbar-hide -mx-1 px-1 border-b border-[var(--border)]">
+      <div className="overflow-x-auto -mx-1 px-1 border-b border-[var(--border)]">
         <div className="flex gap-1 min-w-max">
           {TABS.map(t => (
             <button key={t.id} type="button" onClick={() => t.href ? router.push(t.href) : setTab(t.id)}

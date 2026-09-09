@@ -328,7 +328,7 @@ export default function PortalPage() {
           <div className="bg-white border border-[#1a1814]/15 rounded-2xl p-4 space-y-3">
             <h2 className="text-sm font-semibold">Dispute / note</h2>
             <textarea
-              className="w-full border rounded-lg px-3 py-2 text-sm min-h-[80px]"
+              className="w-full min-h-[80px] resize-none rounded-lg border px-3 py-2 text-sm"
               value={disputeBody}
               onChange={(e) => setDisputeBody(e.target.value)}
               placeholder="Describe the issue for accounts receivable…"

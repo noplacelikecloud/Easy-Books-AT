@@ -141,7 +141,7 @@ function AttendanceRecordForm() {
 
       {loading && <p className="text-sm text-gray-400">Checking existing record…</p>}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
+      <form noValidate onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm">{error}</div>
         )}

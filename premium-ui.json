@@ -1,0 +1,34 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["frontend/src"],
+  "locale": "de-AT",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": [
+    "Table Selection",
+    "Select/Listbox",
+    "Date",
+    "Form",
+    "Scrollbar",
+    "Toast",
+    "CRUD"
+  ],
+  "ownership": {
+    "Select/Listbox": "native",
+    "Date": "native",
+    "Form": "authored",
+    "Scrollbar": "authored",
+    "Toast": "authored",
+    "CRUD": "authored",
+    "Table Selection": "authored"
+  },
+  "requiredCommands": ["lint", "build", "backendTests"],
+  "commands": {
+    "lint": "cd frontend && npm run lint",
+    "build": "cd frontend && npm run build",
+    "backendTests": "cd backend && PYTHONPATH=. .venv/bin/pytest"
+  },
+  "evidence": {
+    "crudFullFlow": "backend/tests/test_document_integrity_at.py",
+    "failurePaths": "backend/tests/test_at_tax_reconciliation.py"
+  }
+}

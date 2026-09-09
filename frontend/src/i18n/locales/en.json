@@ -51,6 +51,7 @@
     "Balance Sheet": "Balance Sheet",
     "Cash Flow": "Cash Flow",
     "Tax Reports": "Tax Reports",
+    "Austria Compliance": "Austria Compliance",
     "Tax Codes": "Tax Codes",
     "Budget vs Actual": "Budget vs Actual",
     "Fixed Assets": "Fixed Assets",
@@ -234,7 +235,8 @@
     "systemMode": "System Mode",
     "english": "English",
     "urdu": "Urdu",
-    "chinese": "Chinese"
+    "chinese": "Chinese",
+    "german": "German (Austria)"
   },
   "col": {
     "date": "Date",

@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from datetime import datetime
 from functools import lru_cache
 from typing import Optional
 
@@ -134,6 +135,10 @@ async def upload_attachment(
 ):
     """Upload one file and bind it to a business record."""
     _ensure_parent_belongs_to_tenant(session, parent_type, parent_id, user.tenant_id)
+    parent = session.exec(select(_PARENT_TABLE[parent_type]).where(
+        _PARENT_TABLE[parent_type].id == parent_id,
+        _PARENT_TABLE[parent_type].tenant_id == user.tenant_id,
+    )).first()
 
     if file.content_type not in _ALLOWED_MIME:
         raise HTTPException(
@@ -179,6 +184,19 @@ async def upload_attachment(
     )
     session.add(att)
     session.flush()
+    from localizations.at.profile import is_at_compliance_active
+    if is_at_compliance_active(session, user.tenant_id):
+        from localizations.at.archive import store_archive_bytes
+        booking_date = str(
+            getattr(parent, "issue_date", None)
+            or getattr(parent, "bill_date", None)
+            or getattr(parent, "date", None)
+            or datetime.utcnow().date()
+        )
+        store_archive_bytes(
+            session, user.tenant_id, "attachment", att.id,
+            att.original_name, att.mime_type, contents, booking_date,
+        )
     log_audit(
         session, user, "create", "attachment", att.id,
         {"parent_type": parent_type, "parent_id": parent_id, "name": att.original_name},
@@ -227,6 +245,15 @@ def delete_attachment(att_id: int, session: SessionDep, user: WriteUserDep):
     att = session.get(Attachment, att_id)
     if not att or att.tenant_id != user.tenant_id:
         raise HTTPException(status_code=404, detail="Attachment not found")
+    from models_at import ArchiveObject
+    from localizations.at.archive import assert_archive_deletable
+    archived = session.exec(select(ArchiveObject).where(
+        ArchiveObject.tenant_id == user.tenant_id,
+        ArchiveObject.object_type == "attachment",
+        ArchiveObject.reference_id == att.id,
+    )).first()
+    if archived:
+        assert_archive_deletable(session, user.tenant_id, archived.id)
     try:
         _storage().from_(SUPABASE_BUCKET).remove([att.file_path])
     except Exception:

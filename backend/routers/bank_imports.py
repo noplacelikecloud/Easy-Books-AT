@@ -19,8 +19,11 @@ Workflow:
 from __future__ import annotations
 
 import csv
+import base64
 import hashlib
+import hmac
 import io
+import json
 from datetime import datetime
 from typing import Optional
 
@@ -42,6 +45,24 @@ from services.permissions import perm_dep
 from .common import CurrentUserDep, SessionDep, WriteUserDep, log_audit
 
 router = APIRouter(tags=["bank-imports"], dependencies=[perm_dep("bank_imports")])
+
+
+def _preview_token(tenant_id: int, bank_account_id: int, file_hash: str, options: dict) -> str:
+    from auth import SECRET_KEY
+    payload = json.dumps({
+        "tenant_id": tenant_id,
+        "bank_account_id": bank_account_id,
+        "file_hash": file_hash,
+        "options": options,
+    }, sort_keys=True, separators=(",", ":")).encode()
+    signature = hmac.new(SECRET_KEY.encode(), payload, hashlib.sha256).hexdigest().encode()
+    return base64.urlsafe_b64encode(payload + b"." + signature).decode()
+
+
+def _assert_preview_token(token: str, tenant_id: int, bank_account_id: int, file_hash: str, options: dict) -> None:
+    expected = _preview_token(tenant_id, bank_account_id, file_hash, options)
+    if not hmac.compare_digest(token, expected):
+        raise HTTPException(409, "Datei oder Parsing-Einstellungen weichen von der bestätigten Vorschau ab.")
 
 
 def _looks_like_ofx(filename: str | None, content: str) -> bool:
@@ -300,6 +321,14 @@ async def preview_bank_statement(
 
     total_debit = sum((D(r["debit"]) for r in rows), ZERO)
     total_credit = sum((D(r["credit"]) for r in rows), ZERO)
+    parse_options = {
+        "date_col": date_col, "description_col": description_col,
+        "debit_col": debit_col, "credit_col": credit_col,
+        "amount_col": amount_col, "balance_col": balance_col,
+        "delimiter": delimiter, "decimal_separator": decimal_separator,
+        "thousands_separator": thousands_separator, "date_format": date_format,
+        "sign_convention": sign_convention,
+    }
 
     return {
         "file_name": filename,
@@ -311,6 +340,9 @@ async def preview_bank_statement(
         "error_rows": errors[:50],
         "total_debit": money(total_debit),
         "total_credit": money(total_credit),
+        "preview_token": _preview_token(
+            user.tenant_id, bank_account_id, file_hash, parse_options,
+        ),
         "preview_lines": [
             {
                 "date": r["date"],
@@ -341,6 +373,7 @@ async def upload_bank_statement(
     date_format: Optional[str] = Form(None),
     sign_convention: str = Form("auto"),
     expected_hash: Optional[str] = Form(None),
+    preview_token: Optional[str] = Form(None),
 ):
     acct = session.exec(
         select(BankAccount).where(
@@ -353,6 +386,22 @@ async def upload_bank_statement(
 
     raw_bytes = await file.read()
     file_hash = hashlib.sha256(raw_bytes).hexdigest()
+
+    parse_options = {
+        "date_col": date_col, "description_col": description_col,
+        "debit_col": debit_col, "credit_col": credit_col,
+        "amount_col": amount_col, "balance_col": balance_col,
+        "delimiter": delimiter, "decimal_separator": decimal_separator,
+        "thousands_separator": thousands_separator, "date_format": date_format,
+        "sign_convention": sign_convention,
+    }
+    from localizations.at.profile import is_at_compliance_active
+    if is_at_compliance_active(session, user.tenant_id):
+        if not preview_token:
+            raise HTTPException(409, "AT-Bankimporte müssen aus einer bestätigten Vorschau übernommen werden.")
+        _assert_preview_token(
+            preview_token, user.tenant_id, bank_account_id, file_hash, parse_options,
+        )
 
     if expected_hash and file_hash != expected_hash:
         raise HTTPException(

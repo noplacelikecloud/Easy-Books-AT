@@ -209,7 +209,7 @@ function ProfileCard({ me, onSaved }: { me: Me; onSaved: () => void }) {
 
   return (
     <Card title="Personal details" icon={UserIcon}>
-      <form onSubmit={save} className="space-y-3">
+      <form noValidate onSubmit={save} className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Full name"><input className={inputCls} value={fullName} onChange={e => setFullName(e.target.value)} required /></Field>
           <Field label="Phone"><input className={inputCls} value={phone} onChange={e => setPhone(e.target.value)} placeholder="Optional" /></Field>
@@ -300,7 +300,7 @@ function OooSubstituteCard({ me }: { me: Me }) {
       <p className="text-sm text-[var(--text-muted)]">
         Designate a colleague who can approve documents assigned to you while you are away.
       </p>
-      <form onSubmit={save} className="space-y-3">
+      <form noValidate onSubmit={save} className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Field label="Substitute">
             {team.length > 0 ? (
@@ -381,7 +381,7 @@ function PasswordCard({ highlight }: { highlight: boolean }) {
       <h2 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
         <KeyRound className="w-4 h-4 text-[var(--primary)]" /> Change password
       </h2>
-      <form onSubmit={submit} className="space-y-3">
+      <form noValidate onSubmit={submit} className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Field label="Current password"><input type="password" className={inputCls} value={cur} onChange={e => setCur(e.target.value)} required /></Field>
           <Field label="New password"><input type="password" className={inputCls} value={next} onChange={e => setNext(e.target.value)} required /></Field>
@@ -472,7 +472,7 @@ function TotpEnrollCard({
               {otpauth && <div>URI: <code>{otpauth}</code></div>}
             </div>
           )}
-          <form onSubmit={enable} className="flex flex-wrap items-end gap-2">
+          <form noValidate onSubmit={enable} className="flex flex-wrap items-end gap-2">
             <Field label="6-digit code">
               <input
                 className={inputCls}

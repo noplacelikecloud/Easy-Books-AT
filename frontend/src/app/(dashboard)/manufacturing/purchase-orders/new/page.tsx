@@ -94,7 +94,7 @@ export default function NewPurchaseOrderPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
+    <form noValidate onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
       <header className="flex items-center gap-3">
         <ShoppingCart className="w-7 h-7 text-[var(--primary)]" />
         <div>

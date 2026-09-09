@@ -2,6 +2,7 @@
 from datetime import date as DateType, timedelta
 from decimal import Decimal
 from typing import List, Optional
+import uuid
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
@@ -33,6 +34,8 @@ class BillLineCreate(BaseModel):
     rate: Decimal = Decimal("0")
     tax_code_id: Optional[int] = None
     tax_inclusive: bool = False
+    service_date: Optional[str] = None
+    tax_treatment_code: Optional[str] = None
 
 
 class BillCreate(BaseModel):
@@ -58,6 +61,10 @@ class BillCreate(BaseModel):
     is_intercompany: bool = False
     ic_counterparty_tenant_id: Optional[int] = None
     custom_fields: Optional[dict] = None
+    # Austrian compliance fields (PR 5, PR 6)
+    service_date_start: Optional[str] = None
+    service_date_end: Optional[str] = None
+    tax_treatment_code: Optional[str] = None
 
 
 def _next_bill_number(session: Session, tenant_id: int, prefix: str, fmt: Optional[str] = None) -> str:
@@ -301,6 +308,8 @@ def create_bill(session: SessionDep, user: WriteUserDep, body: BillCreate, mirro
     total = money(subtotal + gst_amount)
 
     tenant = session.get(Tenant, user.tenant_id)
+    from localizations.at.profile import is_at_compliance_active
+    at_active = is_at_compliance_active(session, user.tenant_id, body.bill_date)
     base_currency = tenant.base_currency if tenant else "USD"
     doc_currency = body.currency or base_currency
     if body.exchange_rate is not None:
@@ -340,7 +349,11 @@ def create_bill(session: SessionDep, user: WriteUserDep, body: BillCreate, mirro
 
     bill = Bill(
         tenant_id=user.tenant_id,
-        number=_next_bill_number(session, user.tenant_id, prefix, bill_fmt),
+        number=(
+            f"DRAFT-{uuid.uuid4().hex[:12].upper()}"
+            if at_active
+            else _next_bill_number(session, user.tenant_id, prefix, bill_fmt)
+        ),
         vendor_id=body.vendor_id,
         vendor_name=vname,
         bill_date=body.bill_date,
@@ -370,6 +383,9 @@ def create_bill(session: SessionDep, user: WriteUserDep, body: BillCreate, mirro
             session, user.tenant_id, "bill", body.custom_fields,
             skip_required=skip_custom_required(_schema_hidden),
         ),
+        service_date_start=body.service_date_start or body.bill_date,
+        service_date_end=body.service_date_end or body.service_date_start or body.bill_date,
+        tax_treatment_code=body.tax_treatment_code,
     )
     session.add(bill)
     session.flush()
@@ -393,6 +409,8 @@ def create_bill(session: SessionDep, user: WriteUserDep, body: BillCreate, mirro
                 tax_rate=tr.rate if tr is not None else None,
                 tax_amount=tr.tax if tr is not None else ZERO,
                 tax_inclusive=bool(line_data.tax_inclusive),
+                service_date=line_data.service_date,
+                tax_treatment_code=line_data.tax_treatment_code,
             )
         )
         if line_data.product_id:
@@ -402,7 +420,7 @@ def create_bill(session: SessionDep, user: WriteUserDep, body: BillCreate, mirro
                     Product.tenant_id == user.tenant_id,
                 )
             ).first()
-            if prod and prod.product_type == "stock":
+            if prod and prod.product_type == "stock" and not at_active:
                 record_purchase(
                     session,
                     tenant_id=user.tenant_id,
@@ -417,6 +435,24 @@ def create_bill(session: SessionDep, user: WriteUserDep, body: BillCreate, mirro
         bill.gst_amount = gst_amount
         bill.total = total
         session.add(bill)
+
+    if at_active:
+        log_audit(
+            session, user, "CREATE", "bill", bill.id,
+            {"number": bill.number, "total": str(total), "lifecycle_status": "draft"},
+        )
+        emit(session, user.tenant_id, "bill.created", {
+            "bill_id": bill.id, "number": bill.number,
+            "vendor_name": bill.vendor_name, "total": str(total),
+            "bill_date": bill.bill_date, "due_date": bill.due_date,
+            "status": bill.status,
+        })
+        session.commit()
+        session.refresh(bill)
+        lines_out = session.exec(select(BillLine).where(BillLine.bill_id == bill.id)).all()
+        result = bill.model_dump()
+        result["lines"] = [line.model_dump() for line in lines_out]
+        return result
 
     ap_acc = (
         session.get(Account, body.ap_account_id)
@@ -453,9 +489,12 @@ def create_bill(session: SessionDep, user: WriteUserDep, body: BillCreate, mirro
         for gl_id, tax_amt in per_gl_tax.items():
             entries.append(EntryInput(account_id=gl_id, debit=money(tax_amt * fx_rate), analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
     elif gst_amount > 0:
-        gst_input_acc = get_or_create_account(
-            session, user.tenant_id, "1250", "GST Receivable (Input)", "Asset"
-        )
+        from services.account_roles import resolve_account_role
+        gst_input_acc = resolve_account_role(session, user.tenant_id, "vat_input")
+        if not gst_input_acc:
+            gst_input_acc = get_or_create_account(
+                session, user.tenant_id, "1250", "GST Receivable (Input)", "Asset"
+            )
         entries.append(EntryInput(account_id=gst_input_acc.id, debit=gst_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
 
     txn = post_transaction(
@@ -595,6 +634,67 @@ def update_bill(session: SessionDep, user: WriteUserDep, bill_id: int, body: Bil
         except LookupError as e:
             raise HTTPException(400, str(e))
 
+    # AT drafts are not accounting records until finalization.  Keep draft
+    # updates free of journal entries and inventory mutations.
+    from localizations.at.profile import is_at_compliance_active
+    if is_at_compliance_active(session, user.tenant_id, body.bill_date):
+        if bill.transaction_id:
+            raise HTTPException(409, "AT-Entwurf enthält bereits eine Buchung und kann nicht direkt geändert werden.")
+        for ln in session.exec(select(BillLine).where(BillLine.bill_id == bill.id)).all():
+            session.delete(ln)
+        bill.vendor_id = body.vendor_id
+        bill.vendor_name = vname
+        bill.bill_date = body.bill_date
+        bill.due_date = due_date
+        bill.payment_term_id = term_id
+        bill.description = body.description
+        bill.notes = body.notes
+        bill.internal_memo = body.internal_memo
+        bill.subtotal = subtotal
+        bill.gst_rate = D(body.gst_rate)
+        bill.gst_amount = gst_amount
+        bill.total = total
+        bill.currency = doc_currency
+        bill.exchange_rate = fx_rate
+        bill.ap_account_id = body.ap_account_id
+        bill.expense_account_id = body.expense_account_id
+        bill.analytic_account_id = body.analytic_account_id
+        bill.analytic_2_id = body.analytic_2_id
+        bill.analytic_3_id = body.analytic_3_id
+        bill.service_date_start = body.service_date_start or body.bill_date
+        bill.service_date_end = body.service_date_end or body.service_date_start or body.bill_date
+        bill.tax_treatment_code = body.tax_treatment_code
+        bill.custom_fields = apply_custom_fields(
+            session, user.tenant_id, "bill", body.custom_fields,
+            existing=bill.custom_fields,
+            skip_required=skip_custom_required(_schema_hidden),
+        )
+        session.add(bill)
+        session.flush()
+        for idx, line_data in enumerate(body.lines):
+            tr = tax_results[idx]
+            session.add(BillLine(
+                bill_id=bill.id, product_id=line_data.product_id,
+                description=line_data.description, qty=D(line_data.qty),
+                unit=line_data.unit, rate=D(line_data.rate), amount=stored_amounts[idx],
+                tax_code_id=line_data.tax_code_id,
+                tax_rate=tr.rate if tr is not None else None,
+                tax_amount=tr.tax if tr is not None else ZERO,
+                tax_inclusive=bool(line_data.tax_inclusive),
+                service_date=line_data.service_date,
+                tax_treatment_code=line_data.tax_treatment_code,
+            ))
+        log_audit(session, user, "UPDATE", "bill", bill.id, {
+            "number": bill.number, "lifecycle_status": "draft", "total": str(total),
+        })
+        session.commit()
+        session.refresh(bill)
+        result = bill.model_dump()
+        result["lines"] = [ln.model_dump() for ln in session.exec(
+            select(BillLine).where(BillLine.bill_id == bill.id)
+        ).all()]
+        return result
+
     # Reverse existing GL JV if present
     if bill.transaction_id:
         old_txn = session.get(Transaction, bill.transaction_id)
@@ -654,6 +754,9 @@ def update_bill(session: SessionDep, user: WriteUserDep, bill_id: int, body: Bil
         session, user.tenant_id, "bill", body.custom_fields, existing=bill.custom_fields,
         skip_required=skip_custom_required(_schema_hidden),
     )
+    bill.service_date_start = body.service_date_start
+    bill.service_date_end = body.service_date_end
+    bill.tax_treatment_code = body.tax_treatment_code
     session.add(bill)
     session.flush()
 
@@ -676,6 +779,8 @@ def update_bill(session: SessionDep, user: WriteUserDep, bill_id: int, body: Bil
             tax_rate=tr.rate if tr is not None else None,
             tax_amount=tr.tax if tr is not None else ZERO,
             tax_inclusive=bool(line_data.tax_inclusive),
+            service_date=line_data.service_date,
+            tax_treatment_code=line_data.tax_treatment_code,
         ))
         if line_data.product_id:
             prod = session.exec(
@@ -723,7 +828,10 @@ def update_bill(session: SessionDep, user: WriteUserDep, bill_id: int, body: Bil
         for gl_id, tax_amt in per_gl_tax.items():
             entries.append(EntryInput(account_id=gl_id, debit=money(tax_amt * fx_rate), analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
     elif gst_amount > 0:
-        gst_input_acc = get_or_create_account(session, user.tenant_id, "1250", "GST Receivable (Input)", "Asset")
+        from services.account_roles import resolve_account_role
+        gst_input_acc = resolve_account_role(session, user.tenant_id, "vat_input")
+        if not gst_input_acc:
+            gst_input_acc = get_or_create_account(session, user.tenant_id, "1250", "GST Receivable (Input)", "Asset")
         entries.append(EntryInput(account_id=gst_input_acc.id, debit=gst_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
 
     txn = post_transaction(
@@ -801,6 +909,23 @@ def submit_bill_for_approval(
     }
 
 
+@router.post("/api/bills/{bill_id}/finalize", dependencies=[perm_dep("bills", "edit")])
+def finalize_bill_endpoint(session: SessionDep, user: WriteUserDep, bill_id: int):
+    """Finalize bill under Austrian compliance / immutable ledger rules (AT-01, AT-02)."""
+    from services.document_lifecycle import finalize_bill
+    return finalize_bill(session, user, bill_id)
+
+
+class CancelBillRequest(BaseModel):
+    reason: str
+
+
+@router.post("/api/bills/{bill_id}/cancel", dependencies=[perm_dep("bills", "edit")])
+def cancel_bill_endpoint(session: SessionDep, user: WriteUserDep, bill_id: int, body: CancelBillRequest):
+    from services.document_lifecycle import cancel_bill
+    return cancel_bill(session, user, bill_id, body.reason)
+
+
 @router.patch("/api/bills/{bill_id}/status", dependencies=[perm_dep("bills", "edit")])
 def update_bill_status(
     session: SessionDep, user: WriteUserDep, bill_id: int, status: str
@@ -810,6 +935,8 @@ def update_bill_status(
     ).first()
     if not b:
         raise HTTPException(404, "Bill not found")
+    if getattr(b, "lifecycle_status", "draft") == "finalized" and status in {"draft", "void", "voided", "cancelled", "reversed"}:
+        raise HTTPException(400, "Finalisierte Eingangsrechnungen dürfen nur über den Storno-/Korrekturablauf geändert werden (§ 131 BAO).")
     b.status = status
     session.add(b)
     log_audit(
@@ -854,8 +981,8 @@ def bulk_bill_action(session: SessionDep, user: WriteUserDep, body: BulkBillActi
             affected += 1
 
         elif body.action == "void":
-            if bill.status in ("paid",):
-                errors.append(f"Bill {bill.number}: cannot void a paid bill")
+            if bill.status in ("paid",) or getattr(bill, "lifecycle_status", "draft") == "finalized":
+                errors.append(f"Bill {bill.number}: use the audited cancellation workflow")
                 continue
             bill.status = "void"
             session.add(bill)
@@ -863,8 +990,8 @@ def bulk_bill_action(session: SessionDep, user: WriteUserDep, body: BulkBillActi
             affected += 1
 
         elif body.action == "delete":
-            if bill.status != "draft":
-                errors.append(f"Bill {bill.number}: only draft bills can be deleted (status={bill.status})")
+            if bill.status != "draft" or getattr(bill, "lifecycle_status", "draft") == "finalized" or bill.transaction_id is not None:
+                errors.append(f"Bill {bill.number}: cannot delete finalized or posted bill (status={bill.status})")
                 continue
             lines = session.exec(select(BillLine).where(BillLine.bill_id == bill.id)).all()
             for ln in lines:

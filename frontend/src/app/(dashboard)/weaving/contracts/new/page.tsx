@@ -92,7 +92,7 @@ export default function NewContractPage() {
         <Link href="/weaving/contracts" className="text-sm text-[var(--text-muted)] hover:text-[var(--primary)]">Cancel</Link>
       </div>
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <form onSubmit={submit} className="space-y-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
+      <form noValidate onSubmit={submit} className="space-y-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className={label}>Customer *</label>
@@ -163,7 +163,7 @@ export default function NewContractPage() {
           </div>
           <div className="sm:col-span-2">
             <label className={label}>Notes</label>
-            <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={input} rows={2} />
+            <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={`${input} resize-none`} rows={2} />
           </div>
         </div>
         <div className="flex justify-end">

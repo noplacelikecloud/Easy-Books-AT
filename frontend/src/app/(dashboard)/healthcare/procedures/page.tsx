@@ -176,7 +176,7 @@ export default function ProceduresPage() {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h2 className="text-lg font-semibold mb-4">Add Procedure</h2>
-            <form onSubmit={createProc} className="space-y-3">
+            <form noValidate onSubmit={createProc} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-neutral-600 mb-1">Code *</label>
@@ -222,7 +222,7 @@ export default function ProceduresPage() {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h2 className="text-lg font-semibold mb-4">Order Procedure</h2>
-            <form onSubmit={createOrder} className="space-y-3">
+            <form noValidate onSubmit={createOrder} className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Procedure *</label>
                 <select required value={orderForm.procedure_id}

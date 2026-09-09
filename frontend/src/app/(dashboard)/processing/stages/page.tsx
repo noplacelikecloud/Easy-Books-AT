@@ -88,7 +88,7 @@ export default function StagesPage() {
       <p className="text-sm text-[var(--text-muted)]">Every stage records visible + invisible wastage. Balance: input ≈ output + visible + invisible.</p>
       {err && <p className="text-sm text-red-600">{err}</p>}
 
-      <form onSubmit={submit} className="grid grid-cols-2 md:grid-cols-4 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
+      <form noValidate onSubmit={submit} className="grid grid-cols-2 md:grid-cols-4 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
         <select className={input} value={form.production_order_id} onChange={e => setForm({ ...form, production_order_id: e.target.value })} required>
           <option value="">Production order…</option>
           {pos.map(p => <option key={p.id} value={p.id}>{p.number}</option>)}

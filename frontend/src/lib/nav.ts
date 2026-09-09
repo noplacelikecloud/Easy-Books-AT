@@ -21,7 +21,7 @@ export type NavItem = {
   icon: React.ElementType
   section: string
   /** Module ID — item is hidden when this module is not installed. */
-  forModule?: "inventory" | "production" | "hrm" | "telecom" | "pra" | "uae_vat" | "sa_zatca" | "in_gst" | "eu_peppol" | "uk_mtd" | "my_invois" | "healthcare" | "purchase_store" | "ai_assistant" | "weaving" | "spinning" | "weighbridge" | "textile_processing" | "pos" | "ecommerce"
+  forModule?: "inventory" | "production" | "hrm" | "telecom" | "pra" | "uae_vat" | "sa_zatca" | "in_gst" | "eu_peppol" | "uk_mtd" | "my_invois" | "at_compliance" | "healthcare" | "purchase_store" | "ai_assistant" | "weaving" | "spinning" | "weighbridge" | "textile_processing" | "pos" | "ecommerce"
   /** Visible when *any* of these modules is installed (Operations home). */
   forAnyModule?: readonly string[]
   /** Module ID — item is hidden when this module IS installed (dual-home entries). */
@@ -143,6 +143,7 @@ export const NAV: NavItem[] = [
   { label: "IC Reconciliation", href: "/intercompany/recon", icon: GitCompareArrows, section: "Reports" },
   { label: "Cash Flow",        href: "/cashflow",          icon: FileText,         section: "Reports" },
   { label: "Tax Reports",      href: "/tax",               icon: Percent,          section: "Reports" },
+  { label: "Austria Compliance", href: "/tax/austria",     icon: ShieldCheck,      section: "Reports", forModule: "at_compliance" },
   { label: "Withholding Tax",  href: "/reports/wht",       icon: Percent,          section: "Reports" },
   { label: "CIT Worksheet",    href: "/reports/cit-worksheet", icon: FileSpreadsheet, section: "Reports" },
   { label: "GSTR Report",      href: "/india-gst/gstr",    icon: FileSpreadsheet,  section: "India GST", forModule: "in_gst" },

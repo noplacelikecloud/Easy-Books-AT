@@ -354,7 +354,7 @@ export default function ExchangeRatesPage() {
               <h2 className="text-lg font-bold text-[var(--text-primary)]">Add Exchange Rate</h2>
               <p className="text-xs text-[var(--text-primary)]/55 mt-0.5">Submitting an existing date+pair updates the rate.</p>
             </div>
-            <form onSubmit={handleSave} className="px-6 py-5 space-y-4">
+            <form noValidate onSubmit={handleSave} className="px-6 py-5 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-primary)]/70 mb-1.5 uppercase tracking-wide">Date</label>
                 <input

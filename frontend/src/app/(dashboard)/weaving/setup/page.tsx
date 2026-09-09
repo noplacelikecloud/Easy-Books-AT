@@ -178,7 +178,7 @@ export default function WeavingSetupPage() {
           <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-xl w-full max-w-md p-5">
             <h2 className="text-lg font-semibold mb-3">{editing ? "Edit" : "Add"} {TABS.find(t => t.key === tab)?.label}</h2>
             {err && <p className="text-sm text-red-600 mb-2">{err}</p>}
-            <form onSubmit={save} className="space-y-3">
+            <form noValidate onSubmit={save} className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Code *</label>
                 <input required value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))}

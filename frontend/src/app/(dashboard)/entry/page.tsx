@@ -471,7 +471,7 @@ export default function NewEntryPage() {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form noValidate onSubmit={handleSubmit} className="space-y-4">
         <section className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-[var(--border)] space-y-4">
 
           {/* ══════════════════════ JOURNAL MODE ════════════════════════════ */}

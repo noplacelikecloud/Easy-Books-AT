@@ -6,7 +6,7 @@ import { apiFetch } from '@/lib/api'
 import { DimensionPickers, slotsToPayload, type AnalyticSlots } from '@/components/DimensionPickers'
 import CurrencyRatePicker from '@/components/fx/CurrencyRatePicker'
 import { useFmt, useSettings } from '@/context/SettingsContext'
-import LineItemsTable, { LineItem, TaxCodeOption } from '@/components/LineItemsTable'
+import LineItemsTable, { LineItem, TaxCodeOption, TaxTreatmentOption } from '@/components/LineItemsTable'
 import { CustomFieldsInputs, type CustomFieldValues } from '@/components/studio/CustomFieldsInputs'
 import { useFormSchema } from '@/components/studio/formSchema'
 
@@ -28,10 +28,13 @@ export interface BillFull {
   analytic_account_id: number | null
   currency: string
   exchange_rate: number
+  service_date_start?: string | null
+  service_date_end?: string | null
+  tax_treatment_code?: string | null
   is_intercompany?: boolean
   ic_counterparty_tenant_id?: number | null
   custom_fields?: CustomFieldValues
-  lines: (LineItem & { tax_code_id?: number | null })[]
+  lines: (LineItem & { tax_code_id?: number | null; tax_treatment_code?: string | null })[]
 }
 
 interface Vendor { id: number; name: string }
@@ -58,6 +61,9 @@ interface FormState {
   exchange_rate: string
   is_intercompany: boolean
   ic_counterparty_tenant_id: string
+  service_date_start: string
+  service_date_end: string
+  tax_treatment_code: string
 }
 
 const emptyForm: FormState = {
@@ -66,6 +72,26 @@ const emptyForm: FormState = {
   ap_account_id: '', expense_account_id: '', analytic_account_id: '',
   currency: 'PKR', exchange_rate: '1',
   is_intercompany: false, ic_counterparty_tenant_id: '',
+  service_date_start: '', service_date_end: '', tax_treatment_code: 'AT_STANDARD_20',
+}
+
+const AT_PURCHASE_TREATMENTS: TaxTreatmentOption[] = [
+  { code: 'AT_STANDARD_20', label: '20 % Normalsteuersatz' },
+  { code: 'AT_REDUCED_13', label: '13 % ermäßigter Satz' },
+  { code: 'AT_REDUCED_10', label: '10 % ermäßigter Satz' },
+  { code: 'AT_REDUCED_4_9', label: '4,9 % begünstigte Waren' },
+  { code: 'AT_IG_ACQUISITION_20', label: 'Innergemeinschaftlicher Erwerb 20 %' },
+  { code: 'AT_IG_ACQUISITION_4_9', label: 'Innergemeinschaftlicher Erwerb 4,9 %' },
+  { code: 'AT_RC_EU_SERVICE_IN', label: 'EU-Dienstleistung / Reverse Charge' },
+  { code: 'AT_RC_DOMESTIC', label: 'Inländischer Reverse Charge' },
+]
+
+function chargedAtRate(code: string): number {
+  if (code.startsWith('AT_IG_') || code.startsWith('AT_RC_')) return 0
+  if (code.includes('4_9')) return 4.9
+  if (code.includes('REDUCED_13')) return 13
+  if (code.includes('REDUCED_10')) return 10
+  return code === 'AT_STANDARD_20' ? 20 : 0
 }
 
 interface Props {
@@ -93,6 +119,7 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
   const [confirmPostedEdit, setConfirmPostedEdit] = useState(false)
   const [icCounterparties, setIcCounterparties] = useState<IcCounterparty[]>([])
   const [customFields, setCustomFields] = useState<CustomFieldValues>({})
+  const [atActive, setAtActive] = useState(false)
   const { fields: schemaFields, fieldAccess, visible: vis, required: req } = useFormSchema('bill')
   const currencyTouched = useRef(false)
 
@@ -101,7 +128,16 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
     if (mode === 'create' && !currencyTouched.current) {
       setForm(f => ({ ...f, currency: settings.currency }))
     }
-  }, [settings.currency]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mode, settings.currency])
+
+  useEffect(() => {
+    apiFetch<{ active: boolean }>('/api/at/profile')
+      .then(result => {
+        setAtActive(result.active)
+        if (result.active && mode === 'create') setForm(current => ({ ...current, gst_rate: '20' }))
+      })
+      .catch(() => setAtActive(false))
+  }, [mode])
 
   useEffect(() => {
     Promise.all([
@@ -145,6 +181,9 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
         is_intercompany: Boolean(bill.is_intercompany),
         ic_counterparty_tenant_id: bill.ic_counterparty_tenant_id
           ? String(bill.ic_counterparty_tenant_id) : '',
+        service_date_start: bill.service_date_start ?? '',
+        service_date_end: bill.service_date_end ?? '',
+        tax_treatment_code: bill.tax_treatment_code ?? 'AT_STANDARD_20',
       })
       setCustomFields(bill.custom_fields ?? {})
       setAnalyticSlots({
@@ -164,6 +203,7 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
         rate: Number(l.rate),
         amount: Number(l.amount),
         tax_code_id: l.tax_code_id ?? null,
+        tax_treatment_code: l.tax_treatment_code ?? null,
       })))
     }
   }, [mode, bill])
@@ -177,9 +217,11 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
         return s + (tc ? Math.round(l.amount * tc.rate / 100 * 100) / 100 : 0)
       }, 0)
     : 0
-  const gstAmount = usePerLineTax
-    ? perLineTaxTotal
-    : Math.round(subtotal * (parseFloat(form.gst_rate) || 0) / 100 * 100) / 100
+  const gstAmount = atActive
+    ? Math.round(lines.reduce((sum, line) => sum + line.amount * chargedAtRate(line.tax_treatment_code || form.tax_treatment_code) / 100, 0) * 100) / 100
+    : usePerLineTax
+      ? perLineTaxTotal
+      : Math.round(subtotal * (parseFloat(form.gst_rate) || 0) / 100 * 100) / 100
   const totalAmount = Math.round((subtotal + gstAmount) * 100) / 100
 
   const apAccounts = accounts.filter(a => a.type === 'Liability')
@@ -205,6 +247,9 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
       description: form.description || null,
       notes: form.notes || null,
       internal_memo: form.internal_memo || null,
+      service_date_start: form.service_date_start || null,
+      service_date_end: form.service_date_end || null,
+      tax_treatment_code: atActive ? form.tax_treatment_code : null,
       lines: lines.map(l => ({
         product_id: l.product_id ?? null,
         description: l.description,
@@ -212,6 +257,7 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
         unit: l.unit ?? null,
         rate: l.rate,
         tax_code_id: l.tax_code_id ?? null,
+        tax_treatment_code: atActive ? (l.tax_treatment_code || form.tax_treatment_code) : null,
       })),
       gst_rate: parseFloat(form.gst_rate) || 0,
       ap_account_id: form.ap_account_id ? parseInt(form.ap_account_id) : null,
@@ -366,9 +412,30 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
         />
         )}
 
+        {atActive && (
+          <section className="grid grid-cols-1 gap-4 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary-light)]/45 p-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Steuerbehandlung</label>
+              <select required value={form.tax_treatment_code} onChange={e => { const code = e.target.value; const rate = code.includes('4_9') ? '4.9' : code.includes('REDUCED_13') ? '13' : code.includes('REDUCED_10') ? '10' : code === 'AT_STANDARD_20' ? '20' : '0'; setForm(p => ({ ...p, tax_treatment_code: code, gst_rate: rate })) }} className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--primary)]">
+                <option value="AT_STANDARD_20">20 % Normalsteuersatz</option>
+                <option value="AT_REDUCED_13">13 % ermäßigter Satz</option>
+                <option value="AT_REDUCED_10">10 % ermäßigter Satz</option>
+                <option value="AT_REDUCED_4_9">4,9 % begünstigte Waren</option>
+                <option value="AT_IG_ACQUISITION_20">Innergemeinschaftlicher Erwerb 20 %</option>
+                <option value="AT_IG_ACQUISITION_4_9">Innergemeinschaftlicher Erwerb 4,9 %</option>
+                <option value="AT_RC_EU_SERVICE_IN">EU-Dienstleistung / Reverse Charge</option>
+                <option value="AT_RC_DOMESTIC">Inländischer Reverse Charge</option>
+              </select>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">Gilt für alle Positionen dieser Eingangsrechnung.</p>
+            </div>
+            <div><label className="mb-1 block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Leistung von</label><input type="date" value={form.service_date_start} onChange={e => setForm(p => ({ ...p, service_date_start: e.target.value }))} className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--primary)]" /></div>
+            <div><label className="mb-1 block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Leistung bis</label><input type="date" min={form.service_date_start || undefined} value={form.service_date_end} onChange={e => setForm(p => ({ ...p, service_date_end: e.target.value }))} className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--primary)]" /></div>
+          </section>
+        )}
+
         <div>
           <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-2">Line Items</label>
-          <LineItemsTable lines={lines} onChange={setLines} products={products} taxCodes={taxCodes.filter(t => t.type === 'input')} showTax showStockHint customerId={form.vendor_id ? Number(form.vendor_id) : null} priceKind="purchase" hideDiscount={!vis('discount_pct')} />
+          <LineItemsTable lines={lines} onChange={setLines} products={products} taxCodes={taxCodes.filter(t => t.type === 'input')} taxTreatments={atActive ? AT_PURCHASE_TREATMENTS : []} showTax={!atActive} showStockHint customerId={form.vendor_id ? Number(form.vendor_id) : null} priceKind="purchase" hideDiscount={!vis('discount_pct')} />
         </div>
 
         <div className="bg-[var(--bg-page)] rounded-xl p-4 space-y-1 text-sm">
@@ -378,7 +445,9 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
           </div>
           <div className="flex justify-between items-center gap-2">
             <span className="text-[var(--text-muted)]">Tax</span>
-            {usePerLineTax ? (
+            {atActive ? (
+              <span className="font-mono text-xs text-[var(--text-muted)]">(nach AT-Steuerbehandlung) {fmt(gstAmount)}</span>
+            ) : usePerLineTax ? (
               <span className="font-mono text-xs text-[var(--text-muted)]">(per-line) {fmt(gstAmount)}</span>
             ) : vis('gst_rate') ? (
               <div className="flex items-center gap-2">

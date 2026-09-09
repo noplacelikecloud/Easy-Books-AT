@@ -173,7 +173,7 @@ export default function LabTestsPage() {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h2 className="text-lg font-semibold mb-4">Add Lab Test</h2>
-            <form onSubmit={createTest} className="space-y-3">
+            <form noValidate onSubmit={createTest} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-neutral-600 mb-1">Code *</label>

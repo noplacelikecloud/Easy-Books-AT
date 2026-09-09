@@ -252,7 +252,7 @@ export function useSettings() {
 export function fmtCurrency(n: number, currency: string, dp: number = 2): string {
   const val = n || 0
   const abs = Math.abs(val)
-  const formatted = abs.toLocaleString("en-PK", {
+  const formatted = abs.toLocaleString(activeNumberLocale(), {
     minimumFractionDigits: dp,
     maximumFractionDigits: dp,
   })
@@ -263,7 +263,7 @@ export function fmtCurrency(n: number, currency: string, dp: number = 2): string
 export function fmtNum(n: number, dp: number = 2): string {
   const val = n || 0
   const abs = Math.abs(val)
-  const formatted = abs.toLocaleString("en-PK", {
+  const formatted = abs.toLocaleString(activeNumberLocale(), {
     minimumFractionDigits: dp,
     maximumFractionDigits: dp,
   })
@@ -274,7 +274,8 @@ export function fmtNum(n: number, dp: number = 2): string {
 export function useFmt() {
   const { settings } = useSettings()
   const dp = parseInt(settings.decimal_places || "2")
-  return (n: number) => fmtNum(n, dp)
+  const locale = settings.app_language === "de" ? "de-AT" : "en-PK"
+  return (n: number) => fmtNumForLocale(n, dp, locale)
 }
 
 /** Compact number formatter for KPI tiles: 1,234,567 → 1.23M, 12,345 → 12.3K. */
@@ -289,7 +290,7 @@ export function fmtCompact(n: number): string {
   } else if (abs >= 10_000) {
     result = (abs / 1_000).toFixed(1).replace(/\.0$/, "") + "K"
   } else {
-    result = Math.round(abs).toLocaleString("en-PK")
+    result = Math.round(abs).toLocaleString(activeNumberLocale())
   }
   return val < 0 ? `(${result})` : result
 }
@@ -309,4 +310,18 @@ export function useCurrency(): string {
 export function useDp(): number {
   const { settings } = useSettings()
   return parseInt(settings.decimal_places || "2")
+}
+
+function activeNumberLocale(): string {
+  if (typeof document !== "undefined" && document.documentElement.lang === "de") return "de-AT"
+  return "en-PK"
+}
+
+function fmtNumForLocale(n: number, dp: number, locale: string): string {
+  const val = n || 0
+  const formatted = Math.abs(val).toLocaleString(locale, {
+    minimumFractionDigits: dp,
+    maximumFractionDigits: dp,
+  })
+  return val < 0 ? `(${formatted})` : formatted
 }

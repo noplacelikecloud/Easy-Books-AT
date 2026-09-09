@@ -50,7 +50,7 @@ export default function SettlementsPage() {
         Credit qty = total grey received − fresh dispatch − (visible + invisible wastage), valued at SO grey rate.
       </p>
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <form onSubmit={create} className="flex gap-2 print:hidden">
+      <form noValidate onSubmit={create} className="flex gap-2 print:hidden">
         <select className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm" value={lotId} onChange={e => setLotId(e.target.value)} required>
           <option value="">Lot to close…</option>
           {lots.filter(l => l.status === "dispatched" || l.status === "in_process" || l.status === "packed").map(l => (

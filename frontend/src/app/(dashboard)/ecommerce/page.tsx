@@ -129,7 +129,7 @@ export default function EcommercePage() {
       {err && <p className="text-sm text-red-600">{err}</p>}
 
       {show && (
-        <form onSubmit={connect} className="border border-[var(--border)] rounded-xl p-3 space-y-2 print:hidden">
+        <form noValidate onSubmit={connect} className="border border-[var(--border)] rounded-xl p-3 space-y-2 print:hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <select className={input} value={form.provider}
               onChange={e => setForm({ ...form, provider: e.target.value })}>

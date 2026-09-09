@@ -5,7 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlmodel import select
 
@@ -22,7 +22,25 @@ from services.pos import (
 from services.money import money
 from .common import CurrentUserDep, SessionDep, WriteUserDep, log_audit
 
-router = APIRouter(prefix="/api/pos", tags=["pos"])
+
+def _require_pos(session, user):
+    from localizations.at.profile import assert_capability
+    assert_capability(session, user.tenant_id, "at_rksv")
+
+    tenant = session.get(Tenant, user.tenant_id)
+    try:
+        enabled = set(json.loads(tenant.enabled_modules or "[]")) if tenant else set()
+    except Exception:
+        enabled = set()
+    if "pos" not in enabled:
+        raise HTTPException(403, "Point of Sale module is not installed")
+
+
+def _require_pos_dep(user: CurrentUserDep, session: SessionDep):
+    _require_pos(session, user)
+
+
+router = APIRouter(prefix="/api/pos", tags=["pos"], dependencies=[Depends(_require_pos_dep)])
 
 
 def _dump(row) -> dict:
@@ -32,16 +50,6 @@ def _dump(row) -> dict:
         if isinstance(v, Decimal):
             d[k] = float(v)
     return d
-
-
-def _require_pos(session, user):
-    tenant = session.get(Tenant, user.tenant_id)
-    try:
-        enabled = set(json.loads(tenant.enabled_modules or "[]")) if tenant else set()
-    except Exception:
-        enabled = set()
-    if "pos" not in enabled:
-        raise HTTPException(403, "Point of Sale module is not installed")
 
 
 # ── Registers ────────────────────────────────────────────────────────────────

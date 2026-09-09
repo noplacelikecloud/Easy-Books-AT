@@ -62,7 +62,7 @@ export default function YieldCalculatorPage() {
       </div>
       {err && <p className="text-sm text-red-600">{err}</p>}
 
-      <form onSubmit={calculate} className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <form noValidate onSubmit={calculate} className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className={labelCls}>Input kg *</label>
           <input type="number" step="any" required value={form.input_kg}

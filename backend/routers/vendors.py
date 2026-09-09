@@ -29,6 +29,19 @@ class VendorCreate(BaseModel):
     wht_tax_code_id: Optional[int] = None
     wht_rate: Optional[Decimal] = None
     custom_fields: Optional[dict] = None
+    # Austrian compliance fields (PR 5: § 11 UStG / § 14 UGB)
+    legal_form: Optional[str] = None
+    registered_seat: Optional[str] = None
+    company_register_number: Optional[str] = None
+    company_register_court: Optional[str] = None
+    tax_number: Optional[str] = None
+    uid: Optional[str] = None
+    uid_verification_status: Optional[str] = None
+    is_business: bool = True
+    address_street: Optional[str] = None
+    address_zip: Optional[str] = None
+    address_city: Optional[str] = None
+    address_country: Optional[str] = "AT"
 
 
 class VendorUpdate(BaseModel):
@@ -44,6 +57,19 @@ class VendorUpdate(BaseModel):
     wht_tax_code_id: Optional[int] = None
     wht_rate: Optional[Decimal] = None
     custom_fields: Optional[dict] = None
+    # Austrian compliance fields (PR 5: § 11 UStG / § 14 UGB)
+    legal_form: Optional[str] = None
+    registered_seat: Optional[str] = None
+    company_register_number: Optional[str] = None
+    company_register_court: Optional[str] = None
+    tax_number: Optional[str] = None
+    uid: Optional[str] = None
+    uid_verification_status: Optional[str] = None
+    is_business: Optional[bool] = None
+    address_street: Optional[str] = None
+    address_zip: Optional[str] = None
+    address_city: Optional[str] = None
+    address_country: Optional[str] = None
 
 
 @router.get("")

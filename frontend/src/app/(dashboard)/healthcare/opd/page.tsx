@@ -152,7 +152,7 @@ export default function OpdPage() {
 
             {tab === "queue" && (
               <div className="space-y-3">
-                <form onSubmit={issueToken} className="bg-white rounded-xl border border-neutral-200 p-4 space-y-3">
+                <form noValidate onSubmit={issueToken} className="bg-white rounded-xl border border-neutral-200 p-4 space-y-3">
                   <p className="text-sm font-medium text-neutral-700">Issue Token</p>
                   <input type="date" value={tokenForm.visit_date}
                     onChange={e => setTokenForm(f => ({ ...f, visit_date: e.target.value }))}
@@ -215,7 +215,7 @@ export default function OpdPage() {
             )}
 
             {tab === "visit" && (
-              <form onSubmit={recordVisit} className="bg-white rounded-xl border border-neutral-200 p-4 space-y-3">
+              <form noValidate onSubmit={recordVisit} className="bg-white rounded-xl border border-neutral-200 p-4 space-y-3">
                 <p className="text-sm font-medium text-neutral-700">Record OPD Visit</p>
                 {visitMsg && (
                   <div className={`text-sm p-2 rounded-lg ${visitMsg.includes("Failed") || visitMsg.includes("failed") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-700"}`}>

@@ -273,7 +273,7 @@ function AddMember({ isOwner, onChange }: { isOwner: boolean; onChange: () => vo
 
       {created && <CopyBanner label={created.label} value={created.value} onClose={() => setCreated(null)} />}
 
-      <form onSubmit={submit} className="space-y-3">
+      <form noValidate onSubmit={submit} className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <label className="block sm:col-span-1">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-primary)]/55">Email</span>

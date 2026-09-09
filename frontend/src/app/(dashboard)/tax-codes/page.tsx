@@ -277,7 +277,7 @@ export default function TaxCodesPage() {
                 {editing ? "Edit Tax Code" : "New Tax Code"}
               </h2>
             </div>
-            <form onSubmit={handleSave} className="px-6 py-5 space-y-4">
+            <form noValidate onSubmit={handleSave} className="px-6 py-5 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--text-primary)]/70 mb-1.5 uppercase tracking-wide">Code</label>

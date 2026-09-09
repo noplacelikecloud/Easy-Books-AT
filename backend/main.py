@@ -32,7 +32,7 @@ from routers import (
     billing, portal, approvals, bank_feeds, agent_ext, inventory_depth,
     consolidation, leases, contract_assets, intercompany, india_gst,
     practice, custom_fields, form_schema, print_templates, ops_tenants,
-    compliance, devices,
+    compliance, devices, at_settings, at_tax, at_reports, at_ear, at_assets, at_goods_received, at_archive,
 )
 from routers.pra import pra_router
 from routers.uae_einvoice import uae_router
@@ -454,6 +454,13 @@ _ROUTERS = [
     form_schema.router,
     print_templates.router,
     ops_tenants.router,
+    at_settings.router,
+    at_tax.router,
+    at_reports.router,
+    at_ear.router,
+    at_assets.router,
+    at_goods_received.router,
+    at_archive.router,
 ]
 
 # Health is mounted once (no /api/v1 duplicate) — load balancers + Caddy probe it.

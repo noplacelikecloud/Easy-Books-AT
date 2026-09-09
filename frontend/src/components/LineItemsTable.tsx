@@ -15,6 +15,7 @@ export interface LineItem {
   promo_rule_id?: number | null
   amount: number
   tax_code_id?: number | null
+  tax_treatment_code?: string | null
   ssp?: number | null
 }
 
@@ -37,11 +38,17 @@ export interface TaxCodeOption {
   type: string
 }
 
+export interface TaxTreatmentOption {
+  code: string
+  label: string
+}
+
 interface Props {
   lines: LineItem[]
   onChange: (lines: LineItem[]) => void
   products?: Product[]
   taxCodes?: TaxCodeOption[]
+  taxTreatments?: TaxTreatmentOption[]
   showTax?: boolean
   readOnly?: boolean
   /** When true, show on-hand qty for stock products and flag oversells */
@@ -59,14 +66,14 @@ interface Props {
 const UNITS = ["pcs", "kg", "mtr", "hrs", "ltr", "box", "doz"]
 
 function emptyLine(): LineItem {
-  return { product_id: null, description: "", qty: 1, unit: "pcs", rate: 0, discount_pct: 0, amount: 0, tax_code_id: null }
+  return { product_id: null, description: "", qty: 1, unit: "pcs", rate: 0, discount_pct: 0, amount: 0, tax_code_id: null, tax_treatment_code: null }
 }
 
 function calcAmount(qty: number, rate: number, discountPct = 0) {
   return Math.round(qty * rate * (1 - discountPct / 100) * 100) / 100
 }
 
-export default function LineItemsTable({ lines, onChange, products = [], taxCodes = [], showTax = false, readOnly = false, showStockHint = false, warnOversell = false, customerId = null, priceKind = 'sale', hideDiscount = false }: Props) {
+export default function LineItemsTable({ lines, onChange, products = [], taxCodes = [], taxTreatments = [], showTax = false, readOnly = false, showStockHint = false, warnOversell = false, customerId = null, priceKind = 'sale', hideDiscount = false }: Props) {
   const fmt      = useFmt()
   const currency = useCurrency()
   const [hints, setHints] = useState<Record<number, { rate: number; date: string; scope: string; party_name: string | null } | null>>({})
@@ -125,8 +132,9 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
   // Extra columns: product, tax — affects colspan calculations
   const hasProducts = products.length > 0
   const hasTax = showTax
+  const hasTaxTreatment = taxTreatments.length > 0
   const baseCols = hideDiscount ? 4 : 5 // description, qty, unit, rate, discount?
-  const extraCols = (hasProducts ? 1 : 0) + (hasTax ? 1 : 0)
+  const extraCols = (hasProducts ? 1 : 0) + (hasTax ? 1 : 0) + (hasTaxTreatment ? 1 : 0)
   const totalDataCols = baseCols + extraCols + 1 // +1 for amount
   const actionCol = readOnly ? 0 : 1
   const totalCols = totalDataCols + actionCol
@@ -153,6 +161,9 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
               )}
               {hasTax && (
                 <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-40">Tax</th>
+              )}
+              {hasTaxTreatment && (
+                <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] min-w-56">AT-Steuerbehandlung</th>
               )}
               <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-36">Amount ({currency})</th>
               {!readOnly && <th className="w-8" />}
@@ -292,6 +303,18 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
                         {taxCodes.map(t => (
                           <option key={t.id} value={t.id}>{t.code} ({t.rate}%)</option>
                         ))}
+                      </select>
+                    )}
+                  </td>
+                )}
+                {hasTaxTreatment && (
+                  <td className="px-3 py-2">
+                    {readOnly ? (
+                      <span className="text-xs text-[var(--text-muted)]">{taxTreatments.find(t => t.code === line.tax_treatment_code)?.label ?? "Standard des Belegs"}</span>
+                    ) : (
+                      <select value={line.tax_treatment_code ?? ""} onChange={e => update(idx, { tax_treatment_code: e.target.value || null })} className="w-full rounded px-1 py-0.5 text-xs outline-none focus:ring-1 focus:ring-[var(--primary)]">
+                        <option value="">Standard des Belegs</option>
+                        {taxTreatments.map(t => <option key={t.code} value={t.code}>{t.label}</option>)}
                       </select>
                     )}
                   </td>
@@ -459,6 +482,19 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
                     {taxCodes.map(t => (
                       <option key={t.id} value={t.id}>{t.code} ({t.rate}%)</option>
                     ))}
+                  </select>
+                )}
+              </div>
+            )}
+            {hasTaxTreatment && (
+              <div>
+                <label className={labelCls}>AT-Steuerbehandlung</label>
+                {readOnly ? (
+                  <span className="text-sm">{taxTreatments.find(t => t.code === line.tax_treatment_code)?.label ?? "Standard des Belegs"}</span>
+                ) : (
+                  <select value={line.tax_treatment_code ?? ""} onChange={e => update(idx, { tax_treatment_code: e.target.value || null })} className={fieldCls}>
+                    <option value="">Standard des Belegs</option>
+                    {taxTreatments.map(t => <option key={t.code} value={t.code}>{t.label}</option>)}
                   </select>
                 )}
               </div>

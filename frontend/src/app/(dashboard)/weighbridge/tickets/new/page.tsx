@@ -70,7 +70,7 @@ export default function NewWeighbridgeTicketPage() {
   const input = "px-2.5 py-1.5 text-sm border border-[var(--border)] rounded-lg w-full bg-[var(--bg-card)]"
 
   return (
-    <form onSubmit={onSubmit} className="p-4 max-w-3xl mx-auto space-y-4">
+    <form noValidate onSubmit={onSubmit} className="p-4 max-w-3xl mx-auto space-y-4">
       <div>
         <h1 className="text-xl font-semibold text-[var(--text-primary)]">New weighbridge ticket</h1>
         <p className="text-sm text-[var(--text-muted)]">Record the vehicle. Optional first weigh on this screen.</p>
@@ -148,7 +148,7 @@ export default function NewWeighbridgeTicketPage() {
         </label>
         <label className="text-sm space-y-1 sm:col-span-2">
           <span className="text-[var(--text-muted)]">Notes</span>
-          <textarea className={input} rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} />
+          <textarea className={`${input} resize-none`} rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} />
         </label>
       </div>
 

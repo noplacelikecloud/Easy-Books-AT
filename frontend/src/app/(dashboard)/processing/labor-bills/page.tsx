@@ -52,7 +52,7 @@ export default function LaborBillsPage() {
       </div>
       <p className="text-sm text-[var(--text-muted)]">Groups stage labor into a Vendor Bill (AP).</p>
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-3 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
+      <form noValidate onSubmit={submit} className="grid grid-cols-1 md:grid-cols-3 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
         <select className={input} value={form.contractor_id} onChange={e => setForm({ ...form, contractor_id: e.target.value })} required>
           <option value="">Contractor…</option>
           {contractors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}

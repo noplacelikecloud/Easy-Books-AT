@@ -168,7 +168,7 @@ export default function EditEmployeePage() {
       </div>
 
       {tab === "details" && (
-        <form onSubmit={saveDetails} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <form noValidate onSubmit={saveDetails} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Full Name <span className="text-red-500">*</span></label>

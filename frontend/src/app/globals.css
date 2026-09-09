@@ -86,6 +86,10 @@ body {
 }
 
 /* ── Scrollbars ── */
+* {
+  scrollbar-color: #B0B7BF transparent;
+  scrollbar-width: thin;
+}
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #B0B7BF; border-radius: 99px; }
@@ -385,10 +389,6 @@ div.freeze-col > table tbody tr:hover td:first-child {
   box-shadow: 0 8px 32px rgba(26,24,20,0.10);
   transform: translateY(-1px);
 }
-
-/* ── Hide scrollbar (icon nav) ── */
-.scrollbar-hide { scrollbar-width: none; }
-.scrollbar-hide::-webkit-scrollbar { display: none; }
 
 /* ═══════════════════════════════════════════════════════════════════
    DOT-MATRIX / LINE-PRINTER PRINT FORMAT

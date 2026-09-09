@@ -14,6 +14,7 @@ from db import MODULES_BY_MODEL, _coa_for
 from models import Account, Settings, Tenant
 from services.ai_providers import AI_SECRET_SETTINGS_KEYS
 from services.whatsapp import WA_SECRET_SETTINGS_KEYS, status_payload as wa_status_payload
+from localizations.at.profile import assert_base_currency_mutable
 
 from .common import AdminUserDep, CurrentUserDep, SessionDep, WriteUserDep, mark_onboarding_step
 
@@ -225,11 +226,12 @@ def update_settings(session: SessionDep, user: WriteUserDep, body: SettingsUpdat
             raise HTTPException(400, "color_theme must be one of: gold, blue, green, rose, slate")
 
     if "app_language" in updates:
-        if updates["app_language"] not in ("en", "ur", "zh"):
-            raise HTTPException(400, "app_language must be 'en', 'ur', or 'zh'")
+        if updates["app_language"] not in ("de", "en", "ur", "zh"):
+            raise HTTPException(400, "app_language must be 'de', 'en', 'ur', or 'zh'")
 
     # Keep Tenant.base_currency in sync with the "currency" KV setting
     if "currency" in updates and tenant:
+        assert_base_currency_mutable(session, user.tenant_id, updates["currency"])
         tenant.base_currency = updates["currency"]
         session.add(tenant)
 

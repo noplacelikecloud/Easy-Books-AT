@@ -50,7 +50,7 @@ export default function RejectionPage() {
       <h1 className="text-xl font-semibold">Rejection Issuance & Grey Rej Outward</h1>
       {err && <p className="text-sm text-red-600">{err}</p>}
 
-      <form onSubmit={createOgp} className="grid grid-cols-2 md:grid-cols-5 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
+      <form noValidate onSubmit={createOgp} className="grid grid-cols-2 md:grid-cols-5 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
         <select className={input} value={form.rejection_issue_note_id} onChange={e => setForm({ ...form, rejection_issue_note_id: e.target.value })} required>
           <option value="">Rejection note…</option>
           {notes.filter(n => n.balance_mtr > 0).map(n => (

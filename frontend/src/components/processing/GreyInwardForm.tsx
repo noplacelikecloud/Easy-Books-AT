@@ -373,7 +373,7 @@ export default function GreyInwardForm({ mode, initial }: Props) {
   ]
 
   return (
-    <form onSubmit={save} className="p-3 md:p-4 space-y-3 max-w-[1400px] mx-auto">
+    <form noValidate onSubmit={save} className="p-3 md:p-4 space-y-3 max-w-[1400px] mx-auto">
       {/* Title + actions */}
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div>

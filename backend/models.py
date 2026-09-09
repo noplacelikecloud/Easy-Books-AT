@@ -395,6 +395,13 @@ class AccountingPeriod(SQLModel, table=True):
     period_end: str
     is_locked: bool = Field(default=False)
     name: Optional[str] = None
+    # Austrian Compliance & Period Integrity (PR 3: AT-08)
+    close_status: str = Field(default="open")  # open | closing | closed | reopened
+    reopen_count: int = Field(default=0)
+    last_reopened_at: Optional[datetime] = None
+    last_reopened_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    reopen_reason: Optional[str] = None
+    snapshot_hash: Optional[str] = None
 
 
 class CloseChecklistItem(SQLModel, table=True):
@@ -585,6 +592,21 @@ class Customer(SQLModel, table=True):
     # India GST (#265)
     gstin: Optional[str] = None       # 15-char GSTIN
     state_code: Optional[str] = None  # 2-digit place-of-supply state code
+    # Austrian compliance fields (PR 5: § 11 UStG / § 14 UGB)
+    legal_form: Optional[str] = None
+    registered_seat: Optional[str] = None
+    company_register_number: Optional[str] = None
+    company_register_court: Optional[str] = None
+    tax_number: Optional[str] = None
+    uid: Optional[str] = None
+    uid_verification_status: Optional[str] = None
+    uid_verified_at: Optional[datetime] = None
+    uid_verification_method: Optional[str] = None
+    is_business: bool = Field(default=True)
+    address_street: Optional[str] = None
+    address_zip: Optional[str] = None
+    address_city: Optional[str] = None
+    address_country: Optional[str] = Field(default="AT")
     # Studio-lite custom fields (#372) — JSON map of x.* keys; never posted to GL
     custom_fields: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
 
@@ -605,6 +627,21 @@ class Vendor(SQLModel, table=True):
     # Withholding tax (#267)
     wht_tax_code_id: Optional[int] = Field(default=None, foreign_key="taxcode.id")
     wht_rate: Optional[Decimal] = Field(default=None, sa_column=Column(Numeric(10, 4)))
+    # Austrian compliance fields (PR 5: § 11 UStG / § 14 UGB)
+    legal_form: Optional[str] = None
+    registered_seat: Optional[str] = None
+    company_register_number: Optional[str] = None
+    company_register_court: Optional[str] = None
+    tax_number: Optional[str] = None
+    uid: Optional[str] = None
+    uid_verification_status: Optional[str] = None
+    uid_verified_at: Optional[datetime] = None
+    uid_verification_method: Optional[str] = None
+    is_business: bool = Field(default=True)
+    address_street: Optional[str] = None
+    address_zip: Optional[str] = None
+    address_city: Optional[str] = None
+    address_country: Optional[str] = Field(default="AT")
     custom_fields: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
 
 
@@ -677,6 +714,15 @@ class Invoice(SQLModel, table=True):
     my_invois_submitted_at: Optional[datetime] = None
     # Approval workflow (#123) — null means no workflow engaged / legacy docs
     approval_status: Optional[str] = Field(default=None, index=True)
+    # Austrian Compliance & Document Integrity (PR 2, 5, 6, 7)
+    lifecycle_status: str = Field(default="draft", index=True)  # draft | finalized | corrected | cancelled
+    delivery_status: str = Field(default="not_sent", index=True)  # not_sent | sent | accepted | rejected
+    settlement_status: str = Field(default="unpaid", index=True)  # unpaid | partial | paid | overpaid
+    service_date_start: Optional[str] = None
+    service_date_end: Optional[str] = None
+    tax_treatment_code: Optional[str] = None
+    original_invoice_id: Optional[int] = Field(default=None, foreign_key="invoice.id")
+    correction_reason: Optional[str] = None
     # Intercompany (#261) — flag + sister-entity link; mirror bill id on counterparty
     # Mirror ids are plain ints (no DB FK) to avoid Invoice↔Bill circular FKs.
     is_intercompany: bool = Field(default=False, index=True)
@@ -713,6 +759,15 @@ class Bill(SQLModel, table=True):
     analytic_2_id: Optional[int] = Field(default=None, foreign_key="analyticaccount.id")
     analytic_3_id: Optional[int] = Field(default=None, foreign_key="analyticaccount.id")
     approval_status: Optional[str] = Field(default=None, index=True)  # #123
+    # Austrian Compliance & Document Integrity (PR 2, 5, 6, 7)
+    lifecycle_status: str = Field(default="draft", index=True)  # draft | finalized | corrected | cancelled
+    delivery_status: str = Field(default="not_sent", index=True)  # not_sent | sent | accepted | rejected
+    settlement_status: str = Field(default="unpaid", index=True)  # unpaid | partial | paid | overpaid
+    service_date_start: Optional[str] = None
+    service_date_end: Optional[str] = None
+    tax_treatment_code: Optional[str] = None
+    original_bill_id: Optional[int] = Field(default=None, foreign_key="bill.id")
+    correction_reason: Optional[str] = None
     # Intercompany (#261) — mirror invoice id is a plain int (no circular FK)
     is_intercompany: bool = Field(default=False, index=True)
     ic_counterparty_tenant_id: Optional[int] = Field(default=None, index=True)
@@ -1507,6 +1562,10 @@ class InvoiceLine(SQLModel, table=True):
     pre_allocation_amount: Optional[Decimal] = Field(
         default=None, sa_column=Column(Numeric(18, 4), nullable=True)
     )
+    # Austrian Compliance Fields (PR 5, PR 6)
+    service_date: Optional[str] = None
+    tax_treatment_code: Optional[str] = None
+    tax_treatment_snapshot: Optional[str] = None
 
 
 class BillLine(SQLModel, table=True):
@@ -1522,6 +1581,10 @@ class BillLine(SQLModel, table=True):
     tax_rate: Optional[Decimal] = Field(default=None, sa_column=Column(Numeric(10, 4), nullable=True))
     tax_amount: Money = money_col()
     tax_inclusive: bool = Field(default=False)
+    # Austrian Compliance Fields (PR 5, PR 6)
+    service_date: Optional[str] = None
+    tax_treatment_code: Optional[str] = None
+    tax_treatment_snapshot: Optional[str] = None
 
 
 class TaxCode(SQLModel, table=True):
@@ -2058,6 +2121,11 @@ class CreditNote(SQLModel, table=True):
     currency: str = Field(default="PKR")
     exchange_rate: Money = money_col(default=Decimal("1"))
     status: str = Field(default="draft")
+    # Austrian Compliance & Document Integrity (PR 2)
+    lifecycle_status: str = Field(default="draft", index=True)
+    original_document_id: Optional[int] = None
+    original_document_type: Optional[str] = None
+    tax_treatment_code: Optional[str] = None
     ar_account_id: Optional[int] = Field(default=None, foreign_key="account.id")
     revenue_account_id: Optional[int] = Field(default=None, foreign_key="account.id")
     transaction_id: Optional[int] = Field(default=None, foreign_key="transaction.id")
@@ -2073,6 +2141,9 @@ class CreditNoteLine(SQLModel, table=True):
     unit: Optional[str] = None
     rate: Money = money_col()
     amount: Money = money_col()
+    tax_treatment_code: Optional[str] = None
+    tax_rate: Optional[Decimal] = Field(default=None, sa_column=Column(Numeric(18, 4), nullable=True))
+    tax_amount: Money = money_col(default=Decimal("0"))
 
 
 class DebitNote(SQLModel, table=True):
@@ -2098,6 +2169,11 @@ class DebitNote(SQLModel, table=True):
     currency: str = Field(default="PKR")
     exchange_rate: Money = money_col(default=Decimal("1"))
     status: str = Field(default="draft")
+    # Austrian Compliance & Document Integrity (PR 2)
+    lifecycle_status: str = Field(default="draft", index=True)
+    original_document_id: Optional[int] = None
+    original_document_type: Optional[str] = None
+    tax_treatment_code: Optional[str] = None
     ap_account_id: Optional[int] = Field(default=None, foreign_key="account.id")
     transaction_id: Optional[int] = Field(default=None, foreign_key="transaction.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -2112,6 +2188,9 @@ class DebitNoteLine(SQLModel, table=True):
     unit: Optional[str] = None
     rate: Money = money_col()
     amount: Money = money_col()
+    tax_treatment_code: Optional[str] = None
+    tax_rate: Optional[Decimal] = Field(default=None, sa_column=Column(Numeric(18, 4), nullable=True))
+    tax_amount: Money = money_col(default=Decimal("0"))
 
 
 class GateOutward(SQLModel, table=True):
@@ -3250,4 +3329,12 @@ from models_textile_processing import (  # noqa: E402,F401
 from models_pos import PosRegister, PosShift, PosSale  # noqa: E402,F401
 from models_ecommerce import (  # noqa: E402,F401
     EcommerceConnection, EcommerceProductMap, EcommerceOrderImport,
+)
+from models_at import (  # noqa: E402,F401
+    DocumentVersion, DocumentNumberSeries, PeriodCloseHistory,
+    AccountingProfileVersion, AccountRoleBinding, ReportLineMapping,
+    TaxTreatmentVersion, TaxEvent, TaxPeriod, TaxAdjustment,
+    SmallBusinessThresholdLedger, TaxFiling, TaxFilingVersion,
+    TaxFilingSubmissionLog, GoodsReceivedRecord, AtAssetValuation,
+    ArchiveObject, LegalHold,
 )

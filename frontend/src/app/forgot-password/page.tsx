@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
           <h1 className="font-serif text-3xl text-[#1a1814]">Easy-Books</h1>
           <p className="text-sm text-[#1a1814]/70 mt-1">Reset your password</p>
         </div>
-        <form onSubmit={submit} className="space-y-4 bg-white/60 border border-[#1a1814]/10 rounded-2xl p-6">
+        <form noValidate onSubmit={submit} className="space-y-4 bg-white/60 border border-[#1a1814]/10 rounded-2xl p-6">
           {sent ? (
             <p className="text-sm text-[#1a1814]/80">
               If that account exists, we sent a reset link. Check your inbox (and spam), then

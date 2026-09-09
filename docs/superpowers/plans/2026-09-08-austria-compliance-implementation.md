@@ -1,9 +1,15 @@
 # Österreich-Compliance – Implementierungsplan
 
-**Stand:** 8. September 2026  
-**Ausgangsrevision:** `9501656a`  
-**Aktueller Alembic-Head:** `0088_device_tokens`  
-**Fachliche Grundlage:** [Österreich-Gap-Analyse](../../OESTERREICH_GAP_ANALYSE.md)  
+**Planstand:** 8. September 2026
+
+**Ausgangsrevision:** `9501656a`
+
+**Implementierungsstand:** 9. September 2026; siehe [Umsetzungsprüfung](../../OESTERREICH_UMSETZUNGSPRUEFUNG.md)
+
+**Aktueller Alembic-Head:** `0089_austria_compliance`
+
+**Fachliche Grundlage:** [Österreich-Gap-Analyse](../../OESTERREICH_GAP_ANALYSE.md)
+
 **Ziel:** Easy-Books für österreichische KMU, insbesondere GmbH/FlexCo und Einzelunternehmen, innerhalb klar ausgewiesener Nutzungsprofile fachlich korrekt, nachvollziehbar und prüfbar betreibbar machen.
 
 ## 1. Zielzustand und verbindlicher Produktumfang

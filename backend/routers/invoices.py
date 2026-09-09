@@ -2,6 +2,7 @@
 from datetime import date as DateType
 from decimal import Decimal
 from typing import List, Optional
+import uuid
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from fastapi.responses import Response
@@ -102,6 +103,8 @@ class InvoiceLineCreate(BaseModel):
     tax_code_id: Optional[int] = None
     tax_inclusive: bool = False
     ssp: Optional[Decimal] = None  # IFRS 15 line SSP override (#259)
+    service_date: Optional[str] = None
+    tax_treatment_code: Optional[str] = None
 
 
 class InvoiceCreate(BaseModel):
@@ -133,6 +136,10 @@ class InvoiceCreate(BaseModel):
     is_intercompany: bool = False
     ic_counterparty_tenant_id: Optional[int] = None
     custom_fields: Optional[dict] = None
+    # Austrian compliance fields (PR 5, PR 6)
+    service_date_start: Optional[str] = None
+    service_date_end: Optional[str] = None
+    tax_treatment_code: Optional[str] = None
 
 
 def _next_invoice_number(session: Session, tenant_id: int, prefix: str, fmt: Optional[str] = None) -> str:
@@ -359,6 +366,8 @@ def create_invoice(session: SessionDep, user: WriteUserDep, body: InvoiceCreate,
     # 1.0 when doc==base, otherwise to the latest known rate on/before
     # issue_date. Caller can override with an explicit exchange_rate.
     tenant = session.get(Tenant, user.tenant_id)
+    from localizations.at.profile import is_at_compliance_active
+    at_active = is_at_compliance_active(session, user.tenant_id, body.issue_date)
     base_currency = tenant.base_currency if tenant else "USD"
     doc_currency = body.currency or base_currency
     if body.exchange_rate is not None:
@@ -407,7 +416,11 @@ def create_invoice(session: SessionDep, user: WriteUserDep, body: InvoiceCreate,
     )
     invoice = Invoice(
         tenant_id=user.tenant_id,
-        number=_next_invoice_number(session, user.tenant_id, prefix, inv_fmt),
+        number=(
+            f"DRAFT-{uuid.uuid4().hex[:12].upper()}"
+            if at_active
+            else _next_invoice_number(session, user.tenant_id, prefix, inv_fmt)
+        ),
         customer_id=body.customer_id,
         customer_name=cname,
         issue_date=body.issue_date,
@@ -441,6 +454,9 @@ def create_invoice(session: SessionDep, user: WriteUserDep, body: InvoiceCreate,
             session, user.tenant_id, "invoice", body.custom_fields,
             skip_required=skip_custom_required(_schema_hidden),
         ),
+        service_date_start=body.service_date_start or body.issue_date,
+        service_date_end=body.service_date_end or body.service_date_start or body.issue_date,
+        tax_treatment_code=body.tax_treatment_code,
     )
     session.add(invoice)
     session.flush()
@@ -518,6 +534,8 @@ def create_invoice(session: SessionDep, user: WriteUserDep, body: InvoiceCreate,
                     tax_inclusive=bool(line_data.tax_inclusive),
                     ssp=ssp_val,
                     pre_allocation_amount=pre if _alloc_audit.get("method") == "relative_ssp" else None,
+                    service_date=line_data.service_date,
+                    tax_treatment_code=line_data.tax_treatment_code,
                 )
             )
             if line_data.product_id:
@@ -527,7 +545,7 @@ def create_invoice(session: SessionDep, user: WriteUserDep, body: InvoiceCreate,
                         Product.tenant_id == user.tenant_id,
                     )
                 ).first()
-                if prod and prod.product_type == "stock":
+                if prod and prod.product_type == "stock" and not at_active:
                     total_cogs += _consume_product_or_bom(
                         session, user.tenant_id, prod,
                         D(line_data.qty), block_negative, invoice.id,
@@ -541,6 +559,29 @@ def create_invoice(session: SessionDep, user: WriteUserDep, body: InvoiceCreate,
         invoice.gst_amount = gst_amount
         invoice.total = total
         session.add(invoice)
+
+    # In Austrian mode, creation persists an editable business document only.
+    # Number assignment, stock movement and all GL/tax postings form one atomic
+    # operation in the explicit finalization endpoint.
+    if at_active:
+        log_audit(
+            session, user, "CREATE", "invoice", invoice.id,
+            {"number": invoice.number, "total": str(total), "lifecycle_status": "draft"},
+        )
+        emit(session, user.tenant_id, "invoice.created", {
+            "invoice_id": invoice.id, "number": invoice.number,
+            "customer_name": invoice.customer_name, "total": str(total),
+            "issue_date": invoice.issue_date, "due_date": invoice.due_date,
+            "status": invoice.status,
+        })
+        session.commit()
+        session.refresh(invoice)
+        lines_out = session.exec(
+            select(InvoiceLine).where(InvoiceLine.invoice_id == invoice.id)
+        ).all()
+        result = invoice.model_dump()
+        result["lines"] = [line.model_dump() for line in lines_out]
+        return result
 
     ar_acc = (
         session.get(Account, body.ar_account_id)
@@ -602,9 +643,12 @@ def create_invoice(session: SessionDep, user: WriteUserDep, body: InvoiceCreate,
         for gl_id, tax_amt in per_gl_tax.items():
             entries.append(EntryInput(account_id=gl_id, credit=money(tax_amt * fx_rate), analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
     elif gst_amount > 0:
-        gst_acc = get_or_create_account(
-            session, user.tenant_id, "2200", "GST Payable (Output)", "Liability"
-        )
+        from services.account_roles import resolve_account_role
+        gst_acc = resolve_account_role(session, user.tenant_id, "vat_output")
+        if not gst_acc:
+            gst_acc = get_or_create_account(
+                session, user.tenant_id, "2200", "GST Payable (Output)", "Liability"
+            )
         entries.append(EntryInput(account_id=gst_acc.id, credit=gst_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
 
     txn = post_transaction(
@@ -812,6 +856,79 @@ def update_invoice(session: SessionDep, user: WriteUserDep, invoice_id: int, bod
         except LookupError as e:
             raise HTTPException(400, str(e))
 
+    # Austrian documents remain pure drafts until the lifecycle service
+    # validates, numbers and posts them atomically.  Editing a draft must
+    # therefore never create GL entries or stock movements.
+    from localizations.at.profile import is_at_compliance_active
+    if is_at_compliance_active(session, user.tenant_id, body.issue_date):
+        if inv.transaction_id or inv.cogs_transaction_id:
+            raise HTTPException(409, "AT-Entwurf enthält bereits Buchungen und kann nicht direkt geändert werden.")
+        for ln in session.exec(select(InvoiceLine).where(InvoiceLine.invoice_id == inv.id)).all():
+            session.delete(ln)
+        inv.customer_id = body.customer_id
+        inv.customer_name = cname
+        inv.issue_date = body.issue_date
+        inv.due_date = due_date
+        inv.payment_term_id = term_id
+        inv.description = body.description
+        inv.notes = body.notes
+        inv.internal_memo = body.internal_memo
+        inv.subtotal = subtotal
+        inv.gst_rate = D(body.gst_rate)
+        inv.gst_amount = gst_amount
+        inv.total = total
+        inv.currency = doc_currency
+        inv.exchange_rate = fx_rate
+        inv.ar_account_id = body.ar_account_id
+        inv.revenue_account_id = body.revenue_account_id
+        inv.assigned_to_id = body.assigned_to_id
+        inv.service_date_start = body.service_date_start or body.issue_date
+        inv.service_date_end = body.service_date_end or body.service_date_start or body.issue_date
+        inv.tax_treatment_code = body.tax_treatment_code
+        inv.custom_fields = apply_custom_fields(
+            session, user.tenant_id, "invoice", body.custom_fields,
+            existing=inv.custom_fields,
+            skip_required=skip_custom_required(_schema_hidden),
+        )
+        a1u, a2u, a3u = pack_analytics(
+            analytic_account_id=body.analytic_account_id,
+            analytic_2_id=body.analytic_2_id,
+            analytic_3_id=body.analytic_3_id,
+            analytic_ids=body.analytic_ids,
+        )
+        inv.analytic_account_id, inv.analytic_2_id, inv.analytic_3_id = a1u, a2u, a3u
+        session.add(inv)
+        session.flush()
+        for idx, line_data in enumerate(body.lines):
+            tr = tax_results[idx]
+            session.add(InvoiceLine(
+                invoice_id=inv.id, product_id=line_data.product_id,
+                description=line_data.description, qty=D(line_data.qty),
+                unit=line_data.unit, rate=D(line_data.rate),
+                discount_pct=D(line_data.discount_pct),
+                promo_rule_id=line_data.promo_rule_id, amount=stored_amounts[idx],
+                tax_code_id=line_data.tax_code_id,
+                tax_rate=tr.rate if tr is not None else None,
+                tax_amount=tr.tax if tr is not None else ZERO,
+                tax_inclusive=bool(line_data.tax_inclusive),
+                service_date=line_data.service_date,
+                tax_treatment_code=line_data.tax_treatment_code,
+                ssp=resolved_ssps[idx],
+                pre_allocation_amount=(
+                    pre_allocs[idx] if _alloc_audit.get("method") == "relative_ssp" else None
+                ),
+            ))
+        log_audit(session, user, "UPDATE", "invoice", inv.id, {
+            "number": inv.number, "lifecycle_status": "draft", "total": str(total),
+        })
+        session.commit()
+        session.refresh(inv)
+        result = inv.model_dump()
+        result["lines"] = [ln.model_dump() for ln in session.exec(
+            select(InvoiceLine).where(InvoiceLine.invoice_id == inv.id)
+        ).all()]
+        return result
+
     # If the draft was already GL-posted, reverse the old JV before re-posting.
     if inv.transaction_id:
         old_txn = session.get(Transaction, inv.transaction_id)
@@ -938,6 +1055,9 @@ def update_invoice(session: SessionDep, user: WriteUserDep, invoice_id: int, bod
         session, user.tenant_id, "invoice", body.custom_fields, existing=inv.custom_fields,
         skip_required=skip_custom_required(_schema_hidden),
     )
+    inv.service_date_start = body.service_date_start
+    inv.service_date_end = body.service_date_end
+    inv.tax_treatment_code = body.tax_treatment_code
     session.add(inv)
     session.flush()
 
@@ -972,6 +1092,8 @@ def update_invoice(session: SessionDep, user: WriteUserDep, invoice_id: int, bod
                 tax_rate=tr.rate if tr is not None else None,
                 tax_amount=tr.tax if tr is not None else ZERO,
                 tax_inclusive=bool(line_data.tax_inclusive),
+                service_date=line_data.service_date,
+                tax_treatment_code=line_data.tax_treatment_code,
                 ssp=ssp_val,
                 pre_allocation_amount=pre if _alloc_audit.get("method") == "relative_ssp" else None,
             ))
@@ -1046,9 +1168,12 @@ def update_invoice(session: SessionDep, user: WriteUserDep, invoice_id: int, bod
         for gl_id, tax_amt in per_gl_tax.items():
             entries.append(EntryInput(account_id=gl_id, credit=money(tax_amt * fx_rate), analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
     elif gst_amount > ZERO:
-        gst_acc = get_or_create_account(
-            session, user.tenant_id, "2200", "GST Payable (Output)", "Liability"
-        )
+        from services.account_roles import resolve_account_role
+        gst_acc = resolve_account_role(session, user.tenant_id, "vat_output")
+        if not gst_acc:
+            gst_acc = get_or_create_account(
+                session, user.tenant_id, "2200", "GST Payable (Output)", "Liability"
+            )
         entries.append(EntryInput(account_id=gst_acc.id, credit=gst_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
 
     txn = post_transaction(
@@ -1166,6 +1291,25 @@ def submit_invoice_for_approval(
     }
 
 
+@router.post("/api/invoices/{invoice_id}/finalize", dependencies=[perm_dep("invoices", "edit")])
+def finalize_invoice_endpoint(session: SessionDep, user: WriteUserDep, invoice_id: int):
+    """Finalize invoice under Austrian compliance / immutable ledger rules (AT-01, AT-02)."""
+    from services.document_lifecycle import finalize_invoice
+    return finalize_invoice(session, user, invoice_id)
+
+
+class CancelDocRequest(BaseModel):
+    reason: str = "Cancellation"
+
+
+@router.post("/api/invoices/{invoice_id}/cancel", dependencies=[perm_dep("invoices", "edit")])
+def cancel_invoice_endpoint(session: SessionDep, user: WriteUserDep, invoice_id: int, body: Optional[CancelDocRequest] = None):
+    """Cancel (storno) a finalized invoice with reversing entry (§ 190 Abs. 4 UGB)."""
+    from services.document_lifecycle import cancel_invoice
+    reason_str = body.reason if body and body.reason else "Cancellation"
+    return cancel_invoice(session, user, invoice_id, reason_str)
+
+
 @router.patch("/api/invoices/{invoice_id}/status", dependencies=[perm_dep("invoices", "edit")])
 def update_invoice_status(
     session: SessionDep, user: WriteUserDep, invoice_id: int, status: str
@@ -1177,6 +1321,8 @@ def update_invoice_status(
     ).first()
     if not inv:
         raise HTTPException(404, "Invoice not found")
+    if getattr(inv, "lifecycle_status", "draft") == "finalized" and status in {"draft", "void", "voided", "cancelled", "reversed"}:
+        raise HTTPException(400, "Finalisierte Rechnungen dürfen nicht in den Entwurfsstatus (draft) zurückgesetzt werden; verwenden Sie den Storno-/Korrekturablauf (§ 131 BAO).")
     old_status = inv.status
     inv.status = status
     session.add(inv)
@@ -1274,8 +1420,8 @@ def bulk_invoice_action(session: SessionDep, user: WriteUserDep, body: BulkInvoi
             affected += 1
 
         elif body.action == "void":
-            if inv.status in ("paid",):
-                errors.append(f"Invoice {inv.number}: cannot void a paid invoice")
+            if inv.status in ("paid",) or getattr(inv, "lifecycle_status", "draft") == "finalized":
+                errors.append(f"Invoice {inv.number}: use the audited cancellation workflow")
                 continue
             inv.status = "void"
             session.add(inv)
@@ -1283,8 +1429,8 @@ def bulk_invoice_action(session: SessionDep, user: WriteUserDep, body: BulkInvoi
             affected += 1
 
         elif body.action == "delete":
-            if inv.status != "draft":
-                errors.append(f"Invoice {inv.number}: only draft invoices can be deleted (status={inv.status})")
+            if inv.status != "draft" or getattr(inv, "lifecycle_status", "draft") == "finalized" or inv.transaction_id is not None:
+                errors.append(f"Invoice {inv.number}: cannot delete finalized or posted invoice (status={inv.status})")
                 continue
             lines = session.exec(select(InvoiceLine).where(InvoiceLine.invoice_id == inv.id)).all()
             for ln in lines:

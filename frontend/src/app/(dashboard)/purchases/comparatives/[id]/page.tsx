@@ -259,7 +259,7 @@ export default function ComparativeDetailPage() {
               onChange={e => setJustification(e.target.value)}
               rows={3}
               placeholder="Why this vendor? Required when the selection is not the lowest quote, or only one quotation exists."
-              className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm print:hidden"
+              className="w-full resize-none px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm print:hidden"
             />
             <p className="hidden print:block text-sm">{justification || "—"}</p>
           </>

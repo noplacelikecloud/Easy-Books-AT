@@ -50,7 +50,7 @@ export default function DispatchPage() {
       </div>
       <p className="text-sm text-[var(--text-muted)]">Creates process-charge invoice from SO rates × billed meters.</p>
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <form onSubmit={submit} className="grid grid-cols-2 md:grid-cols-3 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
+      <form noValidate onSubmit={submit} className="grid grid-cols-2 md:grid-cols-3 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
         <select className={input} value={form.production_order_id} onChange={e => setForm({ ...form, production_order_id: e.target.value })} required>
           <option value="">Production order…</option>
           {pos.filter(p => p.status !== "cancelled").map(p => (

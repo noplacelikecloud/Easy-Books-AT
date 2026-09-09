@@ -41,7 +41,7 @@ export default function ProductionOrdersPage() {
       </div>
       <p className="text-sm text-[var(--text-muted)]">Requires Pakki Parchi — only Safi grey under unit responsibility may enter PPC.</p>
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <form onSubmit={create} className="flex gap-2 print:hidden">
+      <form noValidate onSubmit={create} className="flex gap-2 print:hidden">
         <select className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm" value={lotId} onChange={e => setLotId(e.target.value)} required>
           <option value="">Ready lot…</option>
           {lots.filter(l => l.status === "ready").map(l => (

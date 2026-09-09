@@ -116,7 +116,7 @@ export default function NewQuotationPage() {
   if (loadError || !demand) return <p className="p-4 text-sm text-red-600">{loadError ?? "Demand not found"}</p>
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl p-4">
+    <form noValidate onSubmit={handleSubmit} className="space-y-6 max-w-4xl p-4">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <FileText className="w-7 h-7 text-[var(--primary)]" />

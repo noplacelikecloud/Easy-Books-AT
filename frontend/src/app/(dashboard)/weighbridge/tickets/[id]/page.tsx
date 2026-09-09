@@ -167,7 +167,7 @@ export default function WeighbridgeTicketDetailPage() {
       </div>
 
       {canWeigh && (
-        <form onSubmit={weigh} className="print:hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 space-y-2">
+        <form noValidate onSubmit={weigh} className="print:hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 space-y-2">
           <h2 className="text-sm font-semibold">{row.status === "draft" ? "First weigh" : "Second weigh"}</h2>
           <div className="flex flex-wrap gap-2">
             <select className="px-2.5 py-1.5 text-sm border border-[var(--border)] rounded-lg"
@@ -184,7 +184,7 @@ export default function WeighbridgeTicketDetailPage() {
       )}
 
       {canCancel && (
-        <form onSubmit={cancel} className="print:hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 space-y-2">
+        <form noValidate onSubmit={cancel} className="print:hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 space-y-2">
           <h2 className="text-sm font-semibold">Cancel</h2>
           <div className="flex flex-wrap gap-2">
             <input required value={reason} onChange={e => setReason(e.target.value)} placeholder="Reason"

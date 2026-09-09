@@ -71,7 +71,7 @@ function AcceptInviteInner() {
               You&apos;ve been invited to join <b>{info.company_name}</b> as a <b>{info.role}</b>.
               Set your name and password to activate <b>{info.email}</b>.
             </p>
-            <form onSubmit={submit} className="space-y-3">
+            <form noValidate onSubmit={submit} className="space-y-3">
               <label className="block">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-[#1a1814]/55">Full name</span>
                 <input required className={inputCls} value={fullName} onChange={e => setFullName(e.target.value)} />

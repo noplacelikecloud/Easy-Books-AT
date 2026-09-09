@@ -19,16 +19,23 @@ from routers.modules import _get_enabled
 from services.permissions import perm_dep
 from services.peppol import export_ubl_xml, get_peppol_config, submit_to_peppol
 
-peppol_router = APIRouter(prefix="/peppol", tags=["peppol"], dependencies=[perm_dep("invoices")])
-
-
 def _require_peppol_module(user: CurrentUserDep, session: SessionDep) -> None:
+    from localizations.at.profile import assert_capability
+    assert_capability(session, user.tenant_id, "at_erb")
+
     tenant = session.get(Tenant, user.tenant_id)
     if tenant is None or "eu_peppol" not in _get_enabled(tenant):
         raise HTTPException(
             status_code=403,
             detail="The Peppol / EU VAT e-Invoice module is not installed. Install it from System → Apps.",
         )
+
+
+peppol_router = APIRouter(
+    prefix="/peppol",
+    tags=["peppol"],
+    dependencies=[perm_dep("invoices"), Depends(_require_peppol_module)],
+)
 
 
 @peppol_router.post("/test", dependencies=[Depends(_require_peppol_module), perm_dep("invoices", "edit")])

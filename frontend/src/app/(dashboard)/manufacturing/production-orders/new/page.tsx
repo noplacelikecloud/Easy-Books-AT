@@ -93,7 +93,7 @@ export default function NewProductionOrderPage() {
         <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl px-4 py-3 text-sm">{loadErr}</div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white border border-[var(--border)] rounded-xl p-5 space-y-4">
+      <form noValidate onSubmit={handleSubmit} className="bg-white border border-[var(--border)] rounded-xl p-5 space-y-4">
         <div>
           <label className="block text-xs font-semibold text-[var(--text-primary)]/70 mb-1.5 uppercase tracking-wide">
             Bill of Material

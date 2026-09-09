@@ -102,7 +102,7 @@ export default function NewBankImportPage() {
         <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl px-4 py-3 text-sm">{loadErr}</div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white border border-[var(--border)] rounded-xl p-6 space-y-5">
+      <form noValidate onSubmit={handleSubmit} className="bg-white border border-[var(--border)] rounded-xl p-6 space-y-5">
         <div>
           <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Bank Account</label>
           <select

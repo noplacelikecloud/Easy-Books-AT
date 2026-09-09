@@ -179,7 +179,7 @@ export default function IpdPage() {
               </p>
             )}
             {admitErr && <div className="mb-3 text-red-600 text-sm">{admitErr}</div>}
-            <form onSubmit={admit} className="space-y-3">
+            <form noValidate onSubmit={admit} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-neutral-600 mb-1">Patient *</label>

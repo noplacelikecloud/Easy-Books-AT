@@ -72,7 +72,7 @@ function ResetPasswordForm() {
           <h1 className="font-serif text-3xl text-[#1a1814]">Easy-Books</h1>
           <p className="text-sm text-[#1a1814]/70 mt-1">Choose a new password</p>
         </div>
-        <form onSubmit={submit} className="space-y-4 bg-white/60 border border-[#1a1814]/10 rounded-2xl p-6">
+        <form noValidate onSubmit={submit} className="space-y-4 bg-white/60 border border-[#1a1814]/10 rounded-2xl p-6">
           {tokenOk === false ? (
             <>
               <p className="text-sm text-red-700">{error || "This reset link is invalid or has expired"}</p>

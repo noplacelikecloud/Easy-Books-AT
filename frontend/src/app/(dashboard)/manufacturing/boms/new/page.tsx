@@ -140,7 +140,7 @@ export default function NewBomPage() {
         <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl px-4 py-3 text-sm">{loadErr}</div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form noValidate onSubmit={handleSubmit} className="space-y-5">
         {/* Output product */}
         <div className="bg-white border border-[var(--border)] rounded-xl p-5 space-y-4">
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">Output (Finished Good)</h2>

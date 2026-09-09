@@ -657,7 +657,7 @@ function PrintTab({
             value={editing.html || ''}
             onChange={e => setEditing({ ...editing, html: e.target.value })}
             rows={16}
-            className="w-full font-mono text-xs px-3 py-2 bg-[var(--bg-page)] rounded-lg"
+            className="w-full resize-none font-mono text-xs px-3 py-2 bg-[var(--bg-page)] rounded-lg"
           />
           <button onClick={saveHtml} className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white rounded-lg text-sm">
             <Save className="w-4 h-4" /> Save HTML

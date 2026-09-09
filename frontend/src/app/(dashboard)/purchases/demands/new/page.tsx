@@ -105,7 +105,7 @@ export function DemandForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl p-4">
+    <form noValidate onSubmit={handleSubmit} className="space-y-6 max-w-4xl p-4">
       <header className="flex items-center gap-3">
         <ClipboardList className="w-7 h-7 text-[var(--primary)]" />
         <div>

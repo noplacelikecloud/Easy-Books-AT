@@ -13,6 +13,9 @@ def assert_doc_editable(session: Session, *, tenant_id: int, doc, kind: str) -> 
     Rules: block if any payment allocated; block if date in a locked period;
     block if the GL txn is already reversed.
     """
+    if getattr(doc, "lifecycle_status", "draft") == "finalized":
+        raise HTTPException(400, f"Cannot edit finalized {kind} {getattr(doc, 'number', '')}. § 190 Abs. 4 UGB / § 131 BAO.")
+
     if doc.status == "draft":
         return
 
@@ -40,3 +43,14 @@ def assert_doc_editable(session: Session, *, tenant_id: int, doc, kind: str) -> 
         txn = session.get(Transaction, doc.transaction_id)
         if txn and txn.is_reversed:
             raise HTTPException(400, "This document was already reversed and cannot be edited.")
+
+
+def assert_doc_deletable(session: Session, *, tenant_id: int, doc, kind: str) -> None:
+    """Raise HTTPException if document cannot be deleted (§ 190 Abs. 4 UGB, § 131 BAO)."""
+    if getattr(doc, "lifecycle_status", "draft") == "finalized":
+        raise HTTPException(400, f"Cannot delete finalized {kind} {getattr(doc, 'number', '')}.")
+    if getattr(doc, "transaction_id", None) is not None:
+        raise HTTPException(
+            400,
+            f"Cannot delete {kind} {getattr(doc, 'number', '')} with active GL transaction. Attack 'posted -> draft -> delete' is blocked.",
+        )

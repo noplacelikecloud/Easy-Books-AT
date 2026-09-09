@@ -133,6 +133,11 @@ def toggle_period_lock(
     session: SessionDep, user: WriteUserDep, period_id: int, is_locked: bool
 ):
     p = _get_period(session, user, period_id)
+    if not is_locked and (p.is_locked or getattr(p, "close_status", "open") == "closed"):
+        raise HTTPException(
+            409,
+            "Eine gesperrte oder abgeschlossene Periode kann nur über den kontrollierten Reopen-Workflow mit Begründung geöffnet werden.",
+        )
     if is_locked:
         try:
             assert_can_lock(session, p)
@@ -152,6 +157,32 @@ def toggle_period_lock(
 @router.delete("/{period_id}", status_code=204)
 def delete_period(session: SessionDep, user: WriteUserDep, period_id: int):
     p = _get_period(session, user, period_id)
+
+    # Audit & Compliance guard: Never delete periods with transactions, TaxEvents or DocumentVersions (§ 190 UGB, § 131 BAO)
+    has_txns = session.exec(
+        select(Transaction).where(
+            Transaction.tenant_id == user.tenant_id,
+            Transaction.date >= p.period_start,
+            Transaction.date <= p.period_end,
+        )
+    ).first()
+    if has_txns:
+        raise HTTPException(
+            400,
+            f"Perioden mit Buchungen dürfen nicht gelöscht werden (§ 190 UGB, § 131 BAO). Periode {p.name or p.id} enthält Buchung {has_txns.jv_number}.",
+        )
+
+    from models_at import TaxEvent, DocumentVersion
+    has_tax_events = session.exec(
+        select(TaxEvent).where(
+            TaxEvent.tenant_id == user.tenant_id,
+            TaxEvent.tax_date >= p.period_start,
+            TaxEvent.tax_date <= p.period_end,
+        )
+    ).first()
+    if has_tax_events:
+        raise HTTPException(400, "Perioden mit steuerlichen Ereignissen (TaxEvents) dürfen nicht gelöscht werden (§ 131 BAO).")
+
     for item in session.exec(
         select(CloseChecklistItem).where(
             CloseChecklistItem.period_id == p.id,
@@ -194,9 +225,10 @@ def _pl_net_income(session, user, p) -> tuple[list, "Decimal"]:
     return rows, net
 
 
-def _snapshot_balances(session, user, p) -> None:
-    """Materialise per-account balances for the period so locked-period reads
-    are fast. Includes any closing JV already posted. Skips all-zero rows."""
+def _snapshot_balances(session, user, p) -> str:
+    """Materialise per-account balances for the period and return SHA-256 hash."""
+    import hashlib
+    import json
     snapshot = session.exec(
         select(
             Account.id.label("account_id"),
@@ -212,6 +244,7 @@ def _snapshot_balances(session, user, p) -> None:
         )
         .group_by(Account.id)
     ).all()
+    balance_list = []
     for row in snapshot:
         if D(row.dr) == 0 and D(row.cr) == 0:
             continue
@@ -221,6 +254,10 @@ def _snapshot_balances(session, user, p) -> None:
                 debit_total=money(row.dr), credit_total=money(row.cr),
             )
         )
+        balance_list.append({"account_id": row.account_id, "dr": str(row.dr), "cr": str(row.cr)})
+
+    canonical = json.dumps(balance_list, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 @router.get("/{period_id}/close-preview")
@@ -260,13 +297,7 @@ def close_period(
     mode: str = "year_end",
 ):
     """Close a period.
-
-    mode="year_end" (default): post the P&L → Retained Earnings closing JV,
-        snapshot balances, and lock. Use at fiscal year-end.
-    mode="soft": lock + snapshot balances only — P&L is NOT zeroed, so
-        within-year income statements stay cumulative and comparable. Use for
-        monthly/quarterly management closes. Balance-sheet accounts carry
-        forward automatically (live-from-GL continuity).
+    mode="year_end": zero out all P&L accounts (even if net profit=0!) and transfer to Retained Earnings.
     """
     if mode not in ("year_end", "soft"):
         raise HTTPException(400, "mode must be 'year_end' or 'soft'")
@@ -282,6 +313,7 @@ def close_period(
     net = ZERO
     entries_posted = 0
 
+    from services.account_roles import resolve_account_role
     if mode == "year_end":
         rows, net = _pl_net_income(session, user, p)
         entries: list[EntryInput] = []
@@ -290,48 +322,80 @@ def close_period(
                 amount = D(r.cr) - D(r.dr)
                 if amount > 0:
                     entries.append(EntryInput(account_id=r.id, debit=money(amount)))
+                elif amount < 0:
+                    entries.append(EntryInput(account_id=r.id, credit=money(-amount)))
             else:  # Expense
                 amount = D(r.dr) - D(r.cr)
                 if amount > 0:
                     entries.append(EntryInput(account_id=r.id, credit=money(amount)))
-        if entries and net != 0:
-            re_acc = get_or_create_account(
+                elif amount < 0:
+                    entries.append(EntryInput(account_id=r.id, debit=money(-amount)))
+        if entries:
+            re_acc = resolve_account_role(session, user.tenant_id, "retained_earnings") or get_or_create_account(
                 session, user.tenant_id, "3100", "Retained Earnings", "Equity"
             )
             if net > 0:
                 entries.append(EntryInput(account_id=re_acc.id, credit=money(net)))
-            else:
+            elif net < 0:
                 entries.append(EntryInput(account_id=re_acc.id, debit=money(-net)))
+            # If net == 0, the sum of debits and credits among Revenue and Expense already balance!
             post_transaction(
                 session, user,
                 date=p.period_end,
                 description=f"Year-end close: {p.period_start} → {p.period_end}",
                 entries=entries,
-                audit_entity_type="period",
+                audit_entity_type="period_closing_jv",
                 audit_detail={"period_id": p.id, "net_income": str(net)},
             )
             entries_posted = len(entries)
 
     p.is_locked = True
+    p.close_status = "closed"
     session.add(p)
-    _snapshot_balances(session, user, p)
+    snap_hash = _snapshot_balances(session, user, p)
+    p.snapshot_hash = snap_hash
+
+    from models_at import PeriodCloseHistory
+    history = PeriodCloseHistory(
+        tenant_id=user.tenant_id,
+        period_id=p.id,
+        action="close",
+        performed_at=datetime.utcnow(),
+        performed_by_id=user.id,
+        reason=f"Period close mode: {mode}",
+        closing_balance_hash=snap_hash,
+    )
+    session.add(history)
 
     log_audit(session, user, "CLOSE", "period", p.id,
-              {"mode": mode, "net_income": str(net)})
+              {"mode": mode, "net_income": str(net), "snapshot_hash": snap_hash})
     session.commit()
     session.refresh(p)
     return {"period": p, "mode": mode, "net_income": str(net),
-            "entries_posted": entries_posted}
+            "entries_posted": entries_posted, "snapshot_hash": snap_hash}
+
+
+class PeriodReopenRequest(BaseModel):
+    reason: str
 
 
 @router.post("/{period_id}/reopen")
-def reopen_period(session: SessionDep, user: WriteUserDep, period_id: int):
-    """Reopen a closed period. Removes the materialised balance rows so
-    trial-balance reads fall back to live aggregation again.
+def reopen_period(
+    session: SessionDep,
+    user: WriteUserDep,
+    period_id: int,
+    body: Optional[PeriodReopenRequest] = None,
+    reason: Optional[str] = None,
+):
+    """Reopen a closed period. Requires justification reason.
 
-    Note: this does NOT un-post the closing JV. Reverse that JV manually if
-    you also need to undo the retained-earnings rollover.
+    Under Austrian compliance rules (§ 190 UGB), automatically reverses any year-end closing JV
+    to prevent duplicate closing entries upon subsequent close.
     """
+    reopen_reason = (body.reason if body and body.reason else None) or reason
+    if not reopen_reason or not reopen_reason.strip():
+        raise HTTPException(400, "Begründung für die Wiedereröffnung der Periode ist verpflichtend (§ 190 UGB).")
+
     p = session.exec(
         select(AccountingPeriod).where(
             AccountingPeriod.id == period_id,
@@ -342,6 +406,13 @@ def reopen_period(session: SessionDep, user: WriteUserDep, period_id: int):
         raise HTTPException(404, "Period not found")
     if not p.is_locked:
         raise HTTPException(400, "Period is already open")
+
+    # Unlock period first so reversing transaction can be posted
+    p.is_locked = False
+    p.close_status = "reopened"
+    session.add(p)
+    session.flush()
+
     # Invalidate materialised balances for this period
     rows = session.exec(
         select(AccountBalance).where(
@@ -351,9 +422,53 @@ def reopen_period(session: SessionDep, user: WriteUserDep, period_id: int):
     ).all()
     for r in rows:
         session.delete(r)
-    p.is_locked = False
+
+    # Reverse previous closing JV if present to prevent double postings
+    closing_txns = session.exec(
+        select(Transaction).where(
+            Transaction.tenant_id == user.tenant_id,
+            Transaction.is_reversed == False,  # noqa: E712
+            Transaction.description.like(f"Year-end close: {p.period_start}%"),
+        )
+    ).all()
+    for ctx in closing_txns:
+        old_entries = session.exec(
+            select(JournalEntry).where(JournalEntry.transaction_id == ctx.id)
+        ).all()
+        rev_entries = [
+            EntryInput(account_id=je.account_id, debit=D(je.credit), credit=D(je.debit))
+            for je in old_entries
+        ]
+        rev_txn = post_transaction(
+            session, user,
+            date=p.period_end,
+            description=f"Reversal of Year-end close for period {p.id}: {reopen_reason}",
+            entries=rev_entries,
+            audit_entity_type="period_closing_reversal",
+            audit_detail={"period_id": p.id, "reversed_txn_id": ctx.id},
+        )
+        ctx.is_reversed = True
+        ctx.reversed_by_id = rev_txn.id
+        session.add(ctx)
+
+    p.reopen_count = (p.reopen_count or 0) + 1
+    p.last_reopened_at = datetime.utcnow()
+    p.last_reopened_by_id = user.id
+    p.reopen_reason = reopen_reason
     session.add(p)
-    log_audit(session, user, "REOPEN", "period", p.id, {})
+
+    from models_at import PeriodCloseHistory
+    history = PeriodCloseHistory(
+        tenant_id=user.tenant_id,
+        period_id=p.id,
+        action="reopen",
+        performed_at=datetime.utcnow(),
+        performed_by_id=user.id,
+        reason=reopen_reason,
+    )
+    session.add(history)
+
+    log_audit(session, user, "REOPEN", "period", p.id, {"reason": reopen_reason})
     session.commit()
     session.refresh(p)
     return p

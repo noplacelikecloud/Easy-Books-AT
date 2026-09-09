@@ -97,7 +97,7 @@ export default function SalesOrdersPage() {
       </div>
       {err && <p className="text-sm text-red-600">{err}</p>}
       {show && (
-        <form onSubmit={submit} className="space-y-4 border border-[var(--border)] rounded-xl p-4 print:hidden">
+        <form noValidate onSubmit={submit} className="space-y-4 border border-[var(--border)] rounded-xl p-4 print:hidden">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             <select className={input} value={form.customer_id} onChange={e => setForm({ ...form, customer_id: e.target.value })} required>
               <option value="">Customer…</option>

@@ -676,6 +676,17 @@ MODULE_REGISTRY: dict[str, dict] = {
         "tier":        "free",
         "nav_sections": ["Reports"],
     },
+    "at_compliance": {
+        "label":       "Österreich Compliance (UGB / UStG / BAO)",
+        "description": "Österreichische KMU-Compliance: UGB-Bilanz/GuV, E/A-Rechnung, UVA/ZM, Anlagen-Nebenrechnung, Wareneingangsbuch und Prüfarchiv.",
+        "category":    "Localization",
+        "icon":        "ShieldCheck",
+        "deps":        ["base"],
+        "always":      False,
+        "default":     False,
+        "tier":        "free",
+        "nav_sections": ["Compliance", "Reports"],
+    },
     "eu_peppol": {
         "label":       "Peppol / EU VAT e-Invoice",
         "description": "EU Peppol BIS Billing 3.0 UBL export and Access Point submission — participant ID, VAT tax mapping, sandbox AP adapter, and submission logs.",

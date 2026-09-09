@@ -316,7 +316,7 @@ export default function AnalyticAccountsPage() {
                 {editing ? "Edit Analytic Account" : "New Analytic Account"}
               </h2>
             </div>
-            <form onSubmit={handleSave} className="px-6 py-5 space-y-4">
+            <form noValidate onSubmit={handleSave} className="px-6 py-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--text-primary)]/70 mb-1.5 uppercase tracking-wide">Code</label>
@@ -395,7 +395,7 @@ export default function AnalyticAccountsPage() {
             <div className="px-6 py-4 border-b border-[var(--border)]">
               <h2 className="text-lg font-bold text-[var(--text-primary)]">New Dimension Type</h2>
             </div>
-            <form onSubmit={handleSaveDim} className="px-6 py-5 space-y-4">
+            <form noValidate onSubmit={handleSaveDim} className="px-6 py-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--text-primary)]/70 mb-1.5 uppercase tracking-wide">Code</label>

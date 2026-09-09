@@ -154,7 +154,7 @@ function SizingCalculatorInner() {
               <textarea
                 value={overrideReason}
                 onChange={e => setOverrideReason(e.target.value)}
-                className={inputCls}
+                className={`${inputCls} resize-none`}
                 rows={2}
               />
             </div>

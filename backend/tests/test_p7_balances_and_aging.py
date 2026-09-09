@@ -135,7 +135,7 @@ def test_reopen_period_invalidates_materialised_balances(client):
         ).all()
         assert len(before) > 0
 
-    r = c.post(f"/api/periods/{p['id']}/reopen", headers=auth)
+    r = c.post(f"/api/periods/{p['id']}/reopen", headers=auth, json={"reason": "Test balance invalidation"})
     assert r.status_code == 200
     assert r.json()["is_locked"] is False
 

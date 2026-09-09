@@ -244,7 +244,7 @@ export default function AdmissionDetailPage({ params }: { params: Promise<{ id: 
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h2 className="text-lg font-semibold mb-4">Add Charge</h2>
-            <form onSubmit={addCharge} className="space-y-3">
+            <form noValidate onSubmit={addCharge} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-neutral-600 mb-1">Date</label>

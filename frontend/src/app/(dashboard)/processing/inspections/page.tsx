@@ -52,7 +52,7 @@ export default function InspectionsPage() {
       </div>
       <p className="text-sm text-[var(--text-muted)]">Inspection between Gate Inward and GRN for own-store materials.</p>
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <form onSubmit={submit} className="grid grid-cols-2 md:grid-cols-4 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
+      <form noValidate onSubmit={submit} className="grid grid-cols-2 md:grid-cols-4 gap-2 border border-[var(--border)] rounded-xl p-3 print:hidden">
         <input className={input} placeholder="Gate Inward ID" value={form.gate_inward_id}
           onChange={e => setForm({ ...form, gate_inward_id: e.target.value })} required />
         <input className={input} placeholder="Accepted qty" value={form.accepted_qty}

@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import date
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session, func, select
 
@@ -25,10 +25,15 @@ employees_router = APIRouter(
     dependencies=[perm_dep("employees")],
 )
 
+def _require_at_payroll_gate(user: CurrentUserDep, session: SessionDep) -> None:
+    from localizations.at.profile import assert_capability
+    assert_capability(session, user.tenant_id, "at_payroll")
+
+
 payroll_router = APIRouter(
     prefix="/api/payroll",
     tags=["payroll"],
-    dependencies=[perm_dep("payroll")],
+    dependencies=[perm_dep("payroll"), Depends(_require_at_payroll_gate)],
 )
 
 

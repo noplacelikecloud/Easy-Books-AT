@@ -122,7 +122,7 @@ export default function NewGrnPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form noValidate onSubmit={handleSubmit} className="space-y-5">
         {/* Header fields */}
         <div className="bg-white border border-[var(--border)] rounded-xl p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

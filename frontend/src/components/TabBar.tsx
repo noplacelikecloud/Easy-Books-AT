@@ -58,7 +58,7 @@ export default function TabBar() {
   return (
     <div
       ref={scrollRef}
-      className="hidden md:flex items-stretch h-[30px] shrink-0 overflow-x-auto bg-[#f0ede6] border-b border-[#ddd8d0] scrollbar-hide print:hidden"
+      className="hidden md:flex items-stretch h-[30px] shrink-0 overflow-x-auto bg-[#f0ede6] border-b border-[#ddd8d0] print:hidden"
     >
       {tabs.map(tab => (
         <TabItem

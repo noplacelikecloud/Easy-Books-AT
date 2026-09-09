@@ -191,7 +191,7 @@ export default function PaymentTermsPage() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleSave} className="px-6 py-5 space-y-4">
+            <form noValidate onSubmit={handleSave} className="px-6 py-5 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-primary)]/70 mb-1.5 uppercase tracking-wide">Code</label>
                 <input
