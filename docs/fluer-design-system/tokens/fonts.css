@@ -1,0 +1,11 @@
+/* Fluer Development typefaces.
+   SUBSTITUTION NOTE: no font binaries were supplied with the brief, so the system
+   is pinned to Geist / Geist Mono served from Google Fonts. Drop real .woff2 files
+   into assets/fonts/ and replace the @import below with local @font-face rules. */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
+
+:root {
+  --font-sans: "Geist", ui-sans-serif, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-display: var(--font-sans);
+}

@@ -1,0 +1,75 @@
+:root {
+  /* Neutrals — warm-leaning paper greys */
+  --n-0: #ffffff;
+  --n-25: #fafaf9;
+  --n-50: #f4f4f2;
+  --n-100: #eaeae7;
+  --n-200: #dcdcd8;
+  --n-300: #c2c2bd;
+  --n-400: #9a9a94;
+  --n-500: #75756f;
+  --n-600: #565651;
+  --n-700: #3b3b37;
+  --n-800: #262623;
+  --n-900: #161614;
+
+  /* Primary — deep blue */
+  --blue-50: #eef4fa;
+  --blue-100: #dbe7f4;
+  --blue-200: #b4cce6;
+  --blue-300: #7ca6d4;
+  --blue-400: #3b79bf;
+  --blue-500: #17518c;
+  --blue-600: #123f6e;
+  --blue-700: #0e3054;
+  --blue-800: #0a2238;
+
+  /* Semantic hues — used sparingly, only for state */
+  --moss-500: #4a7a52;
+  --moss-100: #e6efe6;
+  --amber-500: #b4721a;
+  --amber-100: #f7eddc;
+  --red-500: #a33227;
+  --red-100: #f8e6e3;
+  --petrol-500: #0f6e77;
+  --petrol-100: #e4f0f1;
+
+  /* Semantic aliases — always prefer these in components */
+  --bg-page: var(--n-25);
+  --bg-page-alt: var(--n-50);
+  --surface-card: var(--n-0);
+  --surface-raised: var(--n-0);
+  --surface-sunken: var(--n-50);
+  --surface-inverse: var(--n-900);
+  --surface-brand: var(--blue-500);
+  --surface-brand-soft: var(--blue-50);
+  --surface-glass: rgba(255, 255, 255, 0.72);
+
+  --text-strong: var(--n-900);
+  --text-body: var(--n-700);
+  --text-muted: var(--n-500);
+  --text-faint: var(--n-400);
+  --text-inverse: var(--n-0);
+  --text-brand: var(--blue-500);
+  --text-on-brand: #ffffff;
+  --text-link: var(--blue-600);
+  --text-link-hover: var(--blue-700);
+
+  --border-hairline: var(--n-100);
+  --border-default: var(--n-200);
+  --border-strong: var(--n-300);
+  --border-brand: var(--blue-200);
+  --border-inverse: rgba(255, 255, 255, 0.14);
+
+  --state-success-fg: var(--moss-500);
+  --state-success-bg: var(--moss-100);
+  --state-warning-fg: var(--amber-500);
+  --state-warning-bg: var(--amber-100);
+  --state-danger-fg: var(--red-500);
+  --state-danger-bg: var(--red-100);
+  --state-info-fg: var(--petrol-500);
+  --state-info-bg: var(--petrol-100);
+
+  --focus-ring: rgba(23, 81, 140, 0.26);
+  --overlay-scrim: rgba(22, 22, 20, 0.36);
+}

@@ -1,0 +1,42 @@
+<!-- @dsCard group="Console" viewport="1280x800" name="Cloud Console" subtitle="Login, Übersicht, Deployments, Einstellungen — klickbar" -->
+<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Fluer Console</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>html,body{height:100%}body{background:var(--bg-page)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel" src="AppShell.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" data-presets="react">
+const AppDS = window.FluerDesignSystem_fde5f8;
+const AppButton = AppDS.Button, AppDialog = AppDS.Dialog, AppToast = AppDS.Toast;
+function App(){
+  const [authed,setAuthed]=React.useState(false);
+  const [view,setView]=React.useState("overview");
+  const [dialog,setDialog]=React.useState(false);
+  const [toast,setToast]=React.useState(null);
+  if(!authed) return <LoginScreen onLogin={()=>setAuthed(true)} />;
+  const titles={overview:"Übersicht",deployments:"Deployments",logs:"Logs",settings:"Einstellungen"};
+  return (
+    <div style={{position:"relative",display:"flex",height:"100vh",overflow:"hidden"}}>
+      <SideNav view={view} onNav={setView} />
+      <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
+        <TopBar breadcrumb="fluer-console" title={titles[view]} actions={<AppButton size="sm" icon="rocket" onClick={()=>setDialog(true)}>Deploy</AppButton>} />
+        <div style={{flex:1,overflowY:"auto"}}>
+          {view==="overview"&&<OverviewScreen onDeploy={()=>setDialog(true)} />}
+          {view==="deployments"&&<DeploymentsScreen onOpenLog={()=>setToast({tone:"neutral",title:"Log geöffnet",description:"deploy_8f2c41 · build log"})} />}
+          {view==="logs"&&<DeploymentsScreen onOpenLog={()=>{}} />}
+          {view==="settings"&&<SettingsScreen />}
+        </div>
+      </div>
+      <AppDialog open={dialog} title="Deployment starten?" description="Branch main wird nach eu-central-1 in Produktion ausgerollt."
+        onClose={()=>setDialog(false)}
+        footer={<><AppButton variant="ghost" size="sm" onClick={()=>setDialog(false)}>Abbrechen</AppButton><AppButton size="sm" icon="rocket" onClick={()=>{setDialog(false);setToast({tone:"success",title:"Deployment erfolgreich",description:"fluer-console · main · 42 s"});}}>Jetzt deployen</AppButton></>} />
+      {toast?<div style={{position:"absolute",right:24,bottom:24,zIndex:80}}><AppToast {...toast} onClose={()=>setToast(null)} /></div>:null}
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script></body></html>
