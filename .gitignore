@@ -24,6 +24,7 @@ frontend/.vercel/
 
 # Env
 .env
+.env.prod
 backend/.env
 frontend/.env
 frontend/.env.local
