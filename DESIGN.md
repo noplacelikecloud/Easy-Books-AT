@@ -1,7 +1,7 @@
 ---
 version: "2.0"
-name: "Easy-Books / OpenBooksAT"
-description: "Fluer Design System: High-precision, calm B2B console for double-entry bookkeeping and Austrian statutory compliance."
+name: "OpenBooksAT"
+description: "High-precision, calm B2B console for double-entry bookkeeping and Austrian statutory compliance."
 colors:
   primary: "#17518C"
   primary-dark: "#123D6A"
