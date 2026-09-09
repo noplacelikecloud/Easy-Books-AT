@@ -95,8 +95,22 @@ export default function AustriaSettingsPage() {
     setInstalling(true)
     setError(null)
     try {
-      const result = await apiFetch<{ accounts_count: number; roles_bound: number }>("/api/at/install-coa", { method: "POST" })
-      toast(`${result.accounts_count} Konten und ${result.roles_bound} Kontenrollen geprüft`, "success")
+      const result = await apiFetch<{
+        accounts_count: number
+        accounts_created: number
+        accounts_realigned: number
+        legacy_deactivated: string[]
+        legacy_kept_with_history: string[]
+        roles_bound: number
+      }>("/api/at/install-coa", { method: "POST" })
+      // The install replaces the generic chart rather than adding to it, so say
+      // what actually changed instead of just how many accounts were touched.
+      const parts = [`${result.accounts_created} Konten angelegt`]
+      if (result.accounts_realigned > 0) parts.push(`${result.accounts_realigned} auf EKR umgestellt`)
+      if (result.legacy_deactivated.length > 0) parts.push(`${result.legacy_deactivated.length} Altkonten deaktiviert`)
+      if (result.legacy_kept_with_history.length > 0) parts.push(`${result.legacy_kept_with_history.length} mit Buchungen beibehalten`)
+      parts.push(`${result.roles_bound} Kontenrollen gebunden`)
+      toast(parts.join(" · "), "success")
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Kontenplan konnte nicht eingerichtet werden.")
     } finally {
