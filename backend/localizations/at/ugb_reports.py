@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 from sqlmodel import Session, select
 
 from models import Account, JournalEntry, Transaction
+from localizations.at.coa import ekr_number
 from localizations.at.profile import get_active_profile
 from services.money import D, ZERO, money
 
@@ -85,58 +86,55 @@ def compute_ugb_income_statement(
                 pri_sum += pri_b[c]["net_credit"] if use_credit else pri_b[c]["net_debit"]
         return money(cur_sum), money(pri_sum)
 
-    # 1. Umsatzerlöse (Klasse 4000-4799)
-    rev_codes = [c for c in cur_b.keys() | pri_b.keys() if c.startswith("4") and (not c[:2].isdigit() or int(c[:2]) < 48)]
-    if not rev_codes:
-        rev_codes = ["4000", "4010", "4020", "4030", "4040", "4050", "4060"]
-    z1_cur, z1_pri = get_sums(rev_codes, use_credit=True)
+    # The § 231 Abs. 2 UGB positions map onto EKR number ranges, so select by
+    # numeric range rather than by string prefix — "80" as a prefix for
+    # Abschreibungen was a leftover of the pre-EKR chart and would now pick up
+    # 8000 Erträge aus Beteiligungen, an income account.
+    def in_range(low: int, high: int) -> List[str]:
+        """Codes present in either period whose EKR number is in [low, high]."""
+        out = []
+        for c in cur_b.keys() | pri_b.keys():
+            n = ekr_number(c)
+            if n is not None and low <= n <= high:
+                out.append(c)
+        return out
 
-    # 2. Bestandsveränderungen (Klasse 4800-4899)
-    inv_change_codes = [c for c in cur_b.keys() | pri_b.keys() if c.startswith("48")]
-    z2_cur, z2_pri = get_sums(inv_change_codes, use_credit=True)
+    # 1. Umsatzerlöse (EKR 4000-4499, inkl. Erlösberichtigungen und Kundenskonti,
+    #    die als Soll-Buchungen auf Erlöskonten den Umsatz mindern)
+    z1_cur, z1_pri = get_sums(in_range(4000, 4499), use_credit=True)
 
-    # 3. Andere aktivierte Eigenleistungen
-    z3_cur, z3_pri = ZERO, ZERO
+    # 2. Veränderung des Bestands an fertigen und unfertigen Erzeugnissen (EKR 4500-4579)
+    z2_cur, z2_pri = get_sums(in_range(4500, 4579), use_credit=True)
 
-    # 4. Sonstige betriebliche Erträge (Klasse 4900-4999)
-    other_inc_codes = [c for c in cur_b.keys() | pri_b.keys() if c.startswith("49")]
-    z4_cur, z4_pri = get_sums(other_inc_codes, use_credit=True)
+    # 3. Andere aktivierte Eigenleistungen (EKR 4580-4599)
+    z3_cur, z3_pri = get_sums(in_range(4580, 4599), use_credit=True)
 
-    # 5. Materialaufwand und bezogene Herstellungsleistungen (Klasse 5)
-    mat_codes = [c for c in cur_b.keys() | pri_b.keys() if c.startswith("5")]
-    if not mat_codes:
-        mat_codes = ["5000", "5010", "5100"]
-    z5_cur, z5_pri = get_sums(mat_codes, use_credit=False)
+    # 4. Sonstige betriebliche Erträge (EKR 4600-4999)
+    z4_cur, z4_pri = get_sums(in_range(4600, 4999), use_credit=True)
 
-    # 6. Personalaufwand (Klasse 6 oder 7000-7199)
-    pers_codes = [c for c in cur_b.keys() | pri_b.keys() if c.startswith("6") or c.startswith("70") or c.startswith("71")]
-    if not pers_codes:
-        pers_codes = ["7000", "7100"]
-    z6_cur, z6_pri = get_sums(pers_codes, use_credit=False)
+    # 5. Materialaufwand und bezogene Leistungen (EKR Klasse 5)
+    z5_cur, z5_pri = get_sums(in_range(5000, 5999), use_credit=False)
 
-    # 7. Abschreibungen (AfA auf Sachanlagen/immaterielle Vermögenswerte) (Klasse 8000-8099 oder 70xx)
-    depr_codes = [c for c in cur_b.keys() | pri_b.keys() if c.startswith("80")]
-    if not depr_codes:
-        depr_codes = ["8000", "8010"]
-    z7_cur, z7_pri = get_sums(depr_codes, use_credit=False)
+    # 6. Personalaufwand (EKR Klasse 6)
+    z6_cur, z6_pri = get_sums(in_range(6000, 6999), use_credit=False)
 
-    # 8. Sonstige betriebliche Aufwendungen (Klasse 7200-7999)
-    other_exp_codes = [c for c in cur_b.keys() | pri_b.keys() if c.startswith("7") and not (c.startswith("70") or c.startswith("71"))]
-    z8_cur, z8_pri = get_sums(other_exp_codes, use_credit=False)
+    # 7. Abschreibungen (EKR 7000-7049)
+    z7_cur, z7_pri = get_sums(in_range(7000, 7049), use_credit=False)
+
+    # 8. Sonstige betriebliche Aufwendungen (EKR 7050-7999)
+    z8_cur, z8_pri = get_sums(in_range(7050, 7999), use_credit=False)
 
     # 9. Betriebsergebnis (Zwischensumme Z 1 bis 8)
     z9_cur = money(z1_cur + z2_cur + z3_cur + z4_cur - z5_cur - z6_cur - z7_cur - z8_cur)
     z9_pri = money(z1_pri + z2_pri + z3_pri + z4_pri - z5_pri - z6_pri - z7_pri - z8_pri)
 
-    # 10-12. Finanzerträge (Zinserträge, Beteiligungserträge: 8100-8199)
-    fin_inc_codes = [c for c in cur_b.keys() | pri_b.keys() if c.startswith("81")]
-    fin_inc_cur, fin_inc_pri = get_sums(fin_inc_codes, use_credit=True)
+    # 10-12. Finanzerträge (EKR 8000-8249: Beteiligungs-, Zins- und
+    #        Wertpapiererträge sowie Zuschreibungen 8200/8210)
+    fin_inc_cur, fin_inc_pri = get_sums(in_range(8000, 8249), use_credit=True)
 
-    # 13-14. Finanzaufwendungen (Zinsaufwand: 8200-8399)
-    fin_exp_codes = [c for c in cur_b.keys() | pri_b.keys() if c.startswith("82") or c.startswith("83")]
-    if not fin_exp_codes:
-        fin_exp_codes = ["8200"]
-    fin_exp_cur, fin_exp_pri = get_sums(fin_exp_codes, use_credit=False)
+    # 13-14. Finanzaufwendungen (EKR 8250-8399: Abschreibungen auf Finanzanlagen,
+    #        Abgangsverluste, Zins- und Diskontaufwand)
+    fin_exp_cur, fin_exp_pri = get_sums(in_range(8250, 8399), use_credit=False)
 
     # 15. Finanzergebnis (Zwischensumme Z 10 bis 14)
     z15_cur = money(fin_inc_cur - fin_exp_cur)
@@ -147,10 +145,7 @@ def compute_ugb_income_statement(
     z16_pri = money(z9_pri + z15_pri)
 
     # 17. Steuern vom Einkommen und vom Ertrag (KSt: 8500-8599)
-    tax_codes = [c for c in cur_b.keys() | pri_b.keys() if c.startswith("85")]
-    if not tax_codes:
-        tax_codes = ["8500"]
-    z17_cur, z17_pri = get_sums(tax_codes, use_credit=False)
+    z17_cur, z17_pri = get_sums(in_range(8500, 8599), use_credit=False)
 
     # 18. Ergebnis nach Steuern (Jahresüberschuss / Jahresfehlbetrag)
     z18_cur = money(z16_cur - z17_cur)
@@ -236,10 +231,10 @@ def compute_ugb_balance_sheet(
     # A. Anlagevermögen (Klasse 0)
     # I. Immaterielle Vermögensgegenstände (0100-0199)
     a_i_c, a_i_p = sum_class("0", ["1"], is_asset=True)
-    # II. Sachanlagen (0200-0699, 0800)
-    a_ii_c, a_ii_p = sum_class("0", ["2", "3", "4", "5", "6", "8"], is_asset=True)
-    # III. Finanzanlagen (0700-0799)
-    a_iii_c, a_iii_p = sum_class("0", ["7"], is_asset=True)
+    # II. Sachanlagen (0200-0799, inkl. Anzahlungen und Anlagen im Bau)
+    a_ii_c, a_ii_p = sum_class("0", ["2", "3", "4", "5", "6", "7"], is_asset=True)
+    # III. Finanzanlagen (0800-0999 — Beteiligungen und Wertpapiere des AV)
+    a_iii_c, a_iii_p = sum_class("0", ["8", "9"], is_asset=True)
     anlagevermoegen_c = money(a_i_c + a_ii_c + a_iii_c)
     anlagevermoegen_p = money(a_i_p + a_ii_p + a_iii_p)
 

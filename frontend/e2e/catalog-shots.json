@@ -625,6 +625,16 @@
     "tenant": "services"
   },
   {
+    "id": "services--tax-austria-ugb",
+    "path": "/tax/austria/ugb",
+    "tenant": "services"
+  },
+  {
+    "id": "services--tax-austria-ear",
+    "path": "/tax/austria/ear",
+    "tenant": "services"
+  },
+  {
     "id": "services--reports-wht",
     "path": "/reports/wht",
     "tenant": "services"

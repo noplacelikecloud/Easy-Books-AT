@@ -26,7 +26,7 @@ from services.ifrs15 import (
 )
 from services.inventory import InventoryError, consume_stock
 from services.money import D, ONE, ZERO, money, sum_money
-from services.posting import EntryInput, post_transaction
+from services.posting import EntryInput, balance_legs_against, post_transaction
 from services.analytics import pack_analytics
 from services.tax_engine import prepare_line_taxes
 from services.india_gst import (
@@ -629,19 +629,23 @@ def create_invoice(session: SessionDep, user: WriteUserDep, body: InvoiceCreate,
         analytic_3_id=body.analytic_3_id,
         analytic_ids=body.analytic_ids,
     )
-    entries = [EntryInput(account_id=ar_acc.id, debit=total_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3, customer_id=body.customer_id)]
+    # AR carries the document total in base currency and stays exact; the value
+    # legs are each converted and rounded on their own, so their sum can miss it
+    # by a rounding unit — balance_legs_against books that residual on the
+    # largest leg instead of letting the voucher fail the Σdr == Σcr check.
+    legs: list[EntryInput] = []
     if revenue_net_base > ZERO:
-        entries.append(EntryInput(account_id=rev_acc.id, credit=revenue_net_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
+        legs.append(EntryInput(account_id=rev_acc.id, credit=revenue_net_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
     if ca_credit_base > ZERO:
         ca_acc = resolve_contract_asset_account(session, user.tenant_id)
-        entries.append(EntryInput(account_id=ca_acc.id, credit=ca_credit_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3, customer_id=body.customer_id))
+        legs.append(EntryInput(account_id=ca_acc.id, credit=ca_credit_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3, customer_id=body.customer_id))
     if deferred_credit_base > ZERO:
         deferred_acc = resolve_deferred_account(session, user.tenant_id)
-        entries.append(EntryInput(account_id=deferred_acc.id, credit=deferred_credit_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
+        legs.append(EntryInput(account_id=deferred_acc.id, credit=deferred_credit_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
 
     if use_per_line_tax and per_gl_tax:
         for gl_id, tax_amt in per_gl_tax.items():
-            entries.append(EntryInput(account_id=gl_id, credit=money(tax_amt * fx_rate), analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
+            legs.append(EntryInput(account_id=gl_id, credit=money(tax_amt * fx_rate), analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
     elif gst_amount > 0:
         from services.account_roles import resolve_account_role
         gst_acc = resolve_account_role(session, user.tenant_id, "vat_output")
@@ -649,7 +653,9 @@ def create_invoice(session: SessionDep, user: WriteUserDep, body: InvoiceCreate,
             gst_acc = get_or_create_account(
                 session, user.tenant_id, "2200", "GST Payable (Output)", "Liability"
             )
-        entries.append(EntryInput(account_id=gst_acc.id, credit=gst_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
+        legs.append(EntryInput(account_id=gst_acc.id, credit=gst_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
+
+    entries = balance_legs_against(legs, EntryInput(account_id=ar_acc.id, debit=total_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3, customer_id=body.customer_id))
 
     txn = post_transaction(
         session, user,
@@ -938,7 +944,14 @@ def update_invoice(session: SessionDep, user: WriteUserDep, invoice_id: int, bod
             ).all()
             rev_txn = post_transaction(
                 session, user,
-                date=str(DateType.today()),
+                # Same date as the replacement posting below. Dating the
+                # reversal "today" would leave the original amount standing in
+                # the invoice's own period and pull it out of the current one,
+                # so every statement between the two dates would be wrong while
+                # the year-to-date total still looked right. assert_doc_editable
+                # has already refused the edit if this date sits in a locked
+                # period, so posting here is always allowed.
+                date=inv.issue_date,
                 description=f"Reversal of {old_txn.jv_number} (invoice edit)",
                 entries=[
                     EntryInput(account_id=je.account_id, debit=D(je.credit), credit=D(je.debit))
@@ -965,7 +978,7 @@ def update_invoice(session: SessionDep, user: WriteUserDep, invoice_id: int, bod
             ).all()
             rev_cogs_txn = post_transaction(
                 session, user,
-                date=str(DateType.today()),
+                date=inv.issue_date,   # mirrors the main reversal above
                 description=f"Reversal of {old_cogs_txn.jv_number} (invoice edit COGS)",
                 entries=[
                     EntryInput(account_id=je.account_id, debit=D(je.credit), credit=D(je.debit))
@@ -1155,18 +1168,22 @@ def update_invoice(session: SessionDep, user: WriteUserDep, invoice_id: int, bod
         analytic_3_id=body.analytic_3_id,
         analytic_ids=body.analytic_ids,
     )
-    entries = [EntryInput(account_id=ar_acc.id, debit=total_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3, customer_id=inv.customer_id)]
+    # AR carries the document total in base currency and stays exact; the value
+    # legs are each converted and rounded on their own, so their sum can miss it
+    # by a rounding unit — balance_legs_against books that residual on the
+    # largest leg instead of letting the voucher fail the Σdr == Σcr check.
+    legs: list[EntryInput] = []
     if revenue_net_base > ZERO:
-        entries.append(EntryInput(account_id=rev_acc.id, credit=revenue_net_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
+        legs.append(EntryInput(account_id=rev_acc.id, credit=revenue_net_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
     if ca_credit_base > ZERO:
         ca_acc = resolve_contract_asset_account(session, user.tenant_id)
-        entries.append(EntryInput(account_id=ca_acc.id, credit=ca_credit_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3, customer_id=inv.customer_id))
+        legs.append(EntryInput(account_id=ca_acc.id, credit=ca_credit_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3, customer_id=inv.customer_id))
     if deferred_credit_base > ZERO:
         deferred_acc = resolve_deferred_account(session, user.tenant_id)
-        entries.append(EntryInput(account_id=deferred_acc.id, credit=deferred_credit_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
+        legs.append(EntryInput(account_id=deferred_acc.id, credit=deferred_credit_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
     if use_per_line_tax and per_gl_tax:
         for gl_id, tax_amt in per_gl_tax.items():
-            entries.append(EntryInput(account_id=gl_id, credit=money(tax_amt * fx_rate), analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
+            legs.append(EntryInput(account_id=gl_id, credit=money(tax_amt * fx_rate), analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
     elif gst_amount > ZERO:
         from services.account_roles import resolve_account_role
         gst_acc = resolve_account_role(session, user.tenant_id, "vat_output")
@@ -1174,7 +1191,9 @@ def update_invoice(session: SessionDep, user: WriteUserDep, invoice_id: int, bod
             gst_acc = get_or_create_account(
                 session, user.tenant_id, "2200", "GST Payable (Output)", "Liability"
             )
-        entries.append(EntryInput(account_id=gst_acc.id, credit=gst_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
+        legs.append(EntryInput(account_id=gst_acc.id, credit=gst_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3))
+
+    entries = balance_legs_against(legs, EntryInput(account_id=ar_acc.id, debit=total_base, analytic_account_id=a1, analytic_2_id=a2, analytic_3_id=a3, customer_id=inv.customer_id))
 
     txn = post_transaction(
         session, user,

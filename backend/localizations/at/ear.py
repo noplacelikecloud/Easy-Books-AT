@@ -35,6 +35,7 @@ from models import (
     PaymentAllocation, PaymentReceived, Product, Transaction,
 )
 from models_at import AtAssetDepreciation, AtAssetValuation, TaxEvent
+from localizations.at.coa import ekr_number
 from services.money import D, ZERO, money
 
 
@@ -150,7 +151,15 @@ def compute_ear_report(
         credit = D(je.credit)
         debit = D(je.debit)
 
-        # Revenue accounts (Klasse 4)
+        # E1a Kennzahlen follow the EKR class layout, so classify by numeric
+        # range. (The old prefix rules were built for the pre-EKR chart and
+        # would now file EKR 7000 "Abschreibung immaterieller Anlagen" as
+        # payroll and EKR 8000 "Erträge aus Beteiligungen" as an expense.)
+        num = ekr_number(code)
+        if num is None:
+            continue
+
+        # Betriebseinnahmen (EKR Klasse 4)
         if code == "4000":
             net_sales_20 += (credit - debit)
         elif code == "4010":
@@ -159,26 +168,37 @@ def compute_ear_report(
             net_sales_13 += (credit - debit)
         elif code == "4030":
             net_sales_4_9 += (credit - debit)
-        elif code.startswith("40") or code.startswith("4"):
+        elif 4000 <= num <= 4999:
             net_sales_exempt += (credit - debit)
 
-        # Expense accounts
-        elif code in ("5000", "5010"):
+        # Betriebsausgaben
+        elif 5000 <= num <= 5699 or 5800 <= num <= 5899:
+            # Waren, Roh-, Hilfs- und Betriebsstoffe (KZ 9100)
             goods_expense += (debit - credit)
-        elif code == "5100":
+        elif 5700 <= num <= 5799:
+            # Fremdpersonal und Fremdleistungen (KZ 9110)
             subcontracting += (debit - credit)
-        elif code.startswith("6") or code in ("7000", "7100"):
+        elif 6000 <= num <= 6999:
+            # Ausgaben für eigenes Personal (KZ 9120)
             payroll_expense += (debit - credit)
-        elif code in ("0800", "8010"):
+        elif num == 7040:
+            # Geringwertige Wirtschaftsgüter (KZ 9230)
             gwg_expense += (debit - credit)
-        elif code in ("7300", "7310"):
+        elif num in (7320, 7330, 7350):
+            # Kfz-Kosten und Kilometergeld (KZ 9170)
             car_expense += (debit - credit)
-        elif code in ("7400", "7410"):
+        elif 7400 <= num <= 7419:
+            # Miete, Pacht und Leasing (KZ 9180)
             rent_expense += (debit - credit)
-        elif code in ("8200", "8210"):
+        elif 8250 <= num <= 8399:
+            # Zins- und übriger Finanzaufwand (KZ 9220)
             interest_expense += (debit - credit)
-        elif code.startswith("7") or (code.startswith("8") and not code.startswith("80")):
+        elif 7050 <= num <= 7999:
             other_operating_expense += (debit - credit)
+        # EKR 7000-7039 (planmäßige/außerplanmäßige AfA) is deliberately not
+        # bucketed here: KZ 9130 takes depreciation from the asset subledger
+        # below, and these GL accounts are the other side of the very same
+        # postings — counting both would double the AfA.
 
     # AfA from asset subsidiary ledger (§ 7 EStG)
     depreciation_rows = session.exec(

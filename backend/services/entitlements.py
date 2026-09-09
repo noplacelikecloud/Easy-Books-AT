@@ -33,6 +33,7 @@ PLAN_MODULES: dict[str, list[str] | None] = {
         "ecommerce",
         "weighbridge",
         "sa_zatca",
+        "at_compliance",
         "in_gst",
         "eu_peppol",
         "uae_vat",

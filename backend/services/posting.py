@@ -21,7 +21,7 @@ being created in the same request.
 from __future__ import annotations
 
 import json as _json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date as DateType
 from decimal import Decimal
 from typing import Iterable, Optional, Sequence
@@ -32,7 +32,7 @@ from sqlmodel import Session, select
 from models import AccountingPeriod, Account, AuditLog, JournalEntry, Transaction, User
 from services.accounts import assert_account_postable
 from services.analytics import pack_analytics, required_dimensions, slot_for_sort_order
-from services.money import D, ZERO
+from services.money import CENTS, D, ZERO
 from services.vouchers import voucher_number
 
 
@@ -68,6 +68,49 @@ class EntryInput:
             customer_id=self.customer_id,
             vendor_id=self.vendor_id,
         )
+
+
+def balance_legs_against(
+    legs: Sequence[EntryInput], control: EntryInput
+) -> list[EntryInput]:
+    """Return ``[control, *legs]`` with the currency-conversion residual absorbed.
+
+    ``control`` is the leg that has to keep its exact value — the AR/AP control
+    account carrying the document total in base currency, which payments later
+    clear against. Every other leg is converted and rounded on its own, so
+    ``money(a*rate) + money(b*rate)`` can miss ``money((a+b)*rate)`` by a
+    rounding unit. Left alone that cent trips the exact Σdebit == Σcredit check
+    below and the whole document refuses to post; here it is booked on the
+    largest leg of whichever side is short, which is where a rounding
+    difference belongs.
+
+    Only conversion rounding is in scope: the residual this can absorb is
+    bounded by one rounding unit per leg. A wider gap means the caller's
+    amounts genuinely disagree, so it is left in place for ``post_transaction``
+    to reject rather than silently plugged.
+    """
+    out = list(legs)
+    if not out:
+        return [control]
+    # The control leg is fixed, so the correction always lands on the opposite
+    # side: `need` is how much that side has to move to bring the two together.
+    side = "credit" if control.debit > ZERO else "debit"
+    need = (control.debit + sum((e.debit for e in out), ZERO)) - (
+        control.credit + sum((e.credit for e in out), ZERO)
+    )
+    if side == "debit":
+        need = -need
+    if need == ZERO or abs(need) > CENTS * len(out):
+        return [control, *out]
+    candidates = [i for i, e in enumerate(out) if getattr(e, side) > ZERO]
+    if not candidates:
+        return [control, *out]
+    idx = max(candidates, key=lambda i: getattr(out[i], side))
+    adjusted = getattr(out[idx], side) + need
+    if adjusted <= ZERO:
+        return [control, *out]
+    out[idx] = replace(out[idx], **{side: adjusted})
+    return [control, *out]
 
 
 class PostingError(HTTPException):

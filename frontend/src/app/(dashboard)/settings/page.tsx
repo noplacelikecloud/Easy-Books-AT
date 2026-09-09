@@ -1808,6 +1808,33 @@ export default function SettingsPage() {
       </section>
       )}
 
+      {/* Österreich Compliance (#at_compliance) — profile lives on its own page */}
+      {installedModules.has("at_compliance") && (
+      <section className="bg-white border border-[var(--border)] rounded-xl p-5 space-y-3">
+        <h2 className="text-lg font-bold text-[var(--text-primary)]">
+          Österreich Compliance <span className="text-sm font-sans font-normal text-[var(--text-primary)]/50">(UGB / UStG / BAO)</span>
+        </h2>
+        <p className="text-sm text-[var(--text-primary)]/60">
+          Rechtsform, Gewinnermittlung und Umsatzsteuerstatus festlegen und den österreichischen Kontenrahmen
+          installieren. Das Profil muss angelegt sein, bevor die österreichischen Prüfungen bei Belegen greifen.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/settings/austria"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--border)] text-sm font-medium hover:bg-[#faf8f4]"
+          >
+            Österreich-Profil einrichten →
+          </Link>
+          <Link
+            href="/tax/austria"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--border)] text-sm font-medium hover:bg-[#faf8f4]"
+          >
+            UVA, ZM und Meldungen →
+          </Link>
+        </div>
+      </section>
+      )}
+
       {/* ── Appearance ── */}
       <AppearanceSection />
 

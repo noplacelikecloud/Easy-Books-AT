@@ -107,6 +107,9 @@ const NAV_ALIASES: Record<string, string[]> = {
   "/reports/wht":            ["wht", "withholding", "withholding tax"],
   "/reports/cit-worksheet":  ["cit", "corporate tax", "tax worksheet"],
   "/india-gst/gstr":         ["gstr", "india gst", "cgst", "sgst", "igst", "gstr-1"],
+  "/tax/austria":            ["osterreich", "oesterreich", "österreich", "austria", "uva", "u30", "zm", "zusammenfassende meldung", "umsatzsteuervoranmeldung", "ustg", "bao", "kleinunternehmer"],
+  "/tax/austria/ugb":        ["ugb", "bilanz", "guv", "jahresabschluss", "osterreich", "österreich", "224", "231"],
+  "/tax/austria/ear":        ["ear", "e/a-rechnung", "einnahmen ausgaben rechnung", "e1a", "estg", "osterreich", "österreich"],
   "/tax-codes":              ["tax code", "tax rate"],
   "/budgets":                ["budget vs actual", "variance"],
   "/assets":                 ["fixed assets", "depreciation", "capex", "asset register"],
@@ -647,6 +650,21 @@ const REPORTS: NavResult[] = [
     id: "rpt:gstr", type: "report", label: "GSTR Report",
     sub: "India GST GSTR-1 B2B summary", href: "/india-gst/gstr",
     keywords: ["gstr", "india gst", "cgst", "sgst", "igst", "gstr-1", "place of supply"],
+  },
+  {
+    id: "rpt:at-compliance", type: "report", label: "Österreich-Compliance",
+    sub: "UVA, ZM, Abstimmung und Meldungen", href: "/tax/austria",
+    keywords: ["osterreich", "oesterreich", "österreich", "austria", "uva", "u30", "zm", "zusammenfassende meldung", "umsatzsteuervoranmeldung", "kleinunternehmer", "bao"],
+  },
+  {
+    id: "rpt:at-ugb", type: "report", label: "UGB-Abschluss",
+    sub: "Bilanz und GuV nach §§ 224/231 UGB", href: "/tax/austria/ugb",
+    keywords: ["ugb", "bilanz", "guv", "jahresabschluss", "osterreich", "österreich", "aktiva", "passiva"],
+  },
+  {
+    id: "rpt:at-ear", type: "report", label: "E/A-Rechnung",
+    sub: "Einnahmen-Ausgaben-Rechnung, Beilage E1a", href: "/tax/austria/ear",
+    keywords: ["ear", "einnahmen ausgaben rechnung", "e1a", "estg", "zufluss", "abfluss", "osterreich", "österreich"],
   },
   {
     id: "rpt:aging-ar", type: "report", label: "AR Aging Report",

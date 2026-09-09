@@ -29,8 +29,10 @@ def test_ear_calculation_and_e1a_positions(client, admin_headers, at_ear_env):
         acc_bank = session.exec(select(Account).where(Account.tenant_id == user.tenant_id, Account.code == "2800")).first()
         acc_rev20 = session.exec(select(Account).where(Account.tenant_id == user.tenant_id, Account.code == "4000")).first()
         acc_rev10 = session.exec(select(Account).where(Account.tenant_id == user.tenant_id, Account.code == "4010")).first()
-        acc_mat = session.exec(select(Account).where(Account.tenant_id == user.tenant_id, Account.code == "5000")).first()
-        acc_fremd = session.exec(select(Account).where(Account.tenant_id == user.tenant_id, Account.code == "5100")).first()
+        # EKR: 5100 Verbrauch Rohstoffe (Material, KZ 9100),
+        #      5700 Bezogene Leistungen (Fremdleistungen, KZ 9110)
+        acc_mat = session.exec(select(Account).where(Account.tenant_id == user.tenant_id, Account.code == "5100")).first()
+        acc_fremd = session.exec(select(Account).where(Account.tenant_id == user.tenant_id, Account.code == "5700")).first()
 
         # 1. Cash Revenue 20%: 6,000 EUR
         post_transaction(

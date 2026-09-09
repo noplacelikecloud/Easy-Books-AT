@@ -19,7 +19,7 @@ from services.document_snapshot import (
     build_canonical_bill_snapshot,
     record_document_version,
 )
-from services.posting import post_transaction, EntryInput
+from services.posting import balance_legs_against, post_transaction, EntryInput
 from services.money import D, ZERO, money
 
 
@@ -205,7 +205,11 @@ def finalize_invoice(
     inv.gst_amount = money(tax_total)
     inv.total = money(subtotal + tax_total)
     ar = require_role("accounts_receivable")
-    entries.insert(0, EntryInput(
+    # AR stays exactly the invoice total in base currency; the per-line revenue
+    # and VAT legs are each rounded on their own, so over many lines their sum
+    # can drift from it by rounding units. balance_legs_against books that
+    # residual on the largest leg (see services/posting.py).
+    entries = balance_legs_against(entries, EntryInput(
         account_id=ar.id,
         debit=money(inv.total * D(inv.exchange_rate or 1)),
         customer_id=inv.customer_id,
@@ -414,7 +418,8 @@ def finalize_bill(
     bill.gst_amount = money(charged_tax_total)
     bill.total = money(subtotal + charged_tax_total)
     ap = require_role("accounts_payable")
-    entries.insert(0, EntryInput(
+    # AP stays exactly the bill total in base currency — see the invoice path.
+    entries = balance_legs_against(entries, EntryInput(
         account_id=ap.id, credit=money(bill.total * D(bill.exchange_rate or 1)), vendor_id=bill.vendor_id,
     ))
     txn = post_transaction(
@@ -790,12 +795,15 @@ def finalize_credit_note(session: Session, user: Any, note_id: int) -> CreditNot
     if sum((D(row.total) for row in prior), ZERO) + D(note.total) > D(original.total) + D("0.01"):
         raise HTTPException(422, "Gutschriften dürfen den Betrag der Ursprungsrechnung nicht überschreiten.")
     fx = D(note.exchange_rate or 1)
-    entries.append(EntryInput(account_id=revenue.id, debit=money(subtotal * fx)))
+    value_legs: List[EntryInput] = [EntryInput(account_id=revenue.id, debit=money(subtotal * fx))]
     if tax_total > ZERO:
         vat = resolve_account_role(session, user.tenant_id, "vat_output", note.issue_date)
         if not vat: raise HTTPException(422, "Kontenrolle 'vat_output' fehlt.")
-        entries.append(EntryInput(account_id=vat.id, debit=money(tax_total * fx)))
-    entries.append(EntryInput(account_id=ar.id, credit=money(note.total * fx), customer_id=note.customer_id))
+        value_legs.append(EntryInput(account_id=vat.id, debit=money(tax_total * fx)))
+    # AR stays exactly the note total in base currency — see the invoice path.
+    entries.extend(balance_legs_against(
+        value_legs, EntryInput(account_id=ar.id, credit=money(note.total * fx), customer_id=note.customer_id),
+    ))
     inventory = resolve_account_role(session, user.tenant_id, "inventory", note.issue_date)
     cogs = resolve_account_role(session, user.tenant_id, "cogs", note.issue_date)
     for line in lines:
@@ -904,7 +912,8 @@ def finalize_debit_note(session: Session, user: Any, note_id: int) -> DebitNote:
     note.subtotal, note.gst_amount, note.total = money(subtotal), money(charged_total), money(subtotal + charged_total)
     if sum((D(row.total) for row in prior), ZERO) + D(note.total) > D(original.total) + D("0.01"):
         raise HTTPException(422, "Korrekturen dürfen den Betrag der Ursprungsrechnung nicht überschreiten.")
-    entries.insert(0, EntryInput(account_id=ap.id, debit=money(note.total * fx), vendor_id=note.vendor_id))
+    # AP stays exactly the note total in base currency — see the invoice path.
+    entries = balance_legs_against(entries, EntryInput(account_id=ap.id, debit=money(note.total * fx), vendor_id=note.vendor_id))
     note.number = get_next_series_number(session, user.tenant_id, "debit_note", note.issue_date)
     txn = post_transaction(session, user, date=note.issue_date, description=f"Lieferantengutschrift {note.number}", entries=entries,
         voucher_type="DN", audit_entity_type="debit_note", audit_detail={"original_bill":original.number})

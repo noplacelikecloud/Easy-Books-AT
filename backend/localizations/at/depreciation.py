@@ -208,15 +208,17 @@ def post_annual_depreciation_run(
     entries: List[EntryInput] = []
     movements: list[AtAssetDepreciation] = []
 
-    # Expense account 8000 (AfA auf Sachanlagen)
+    # EKR 7020 — planmäßige Abschreibung von Sachanlagen. (This used to post to
+    # 8000, which the EKR assigns to Erträge aus Beteiligungen: the AfA debit
+    # landed on an income account and skewed the Finanzergebnis.)
     depr_exp_acc = session.exec(
-        select(Account).where(Account.tenant_id == user.tenant_id, Account.code == "8000")
+        select(Account).where(Account.tenant_id == user.tenant_id, Account.code == "7020")
     ).first()
     if not depr_exp_acc:
         depr_exp_acc = Account(
             tenant_id=user.tenant_id,
-            code="8000",
-            name="Abschreibungen auf Sachanlagen (AfA)",
+            code="7020",
+            name="Planmäßige Abschreibung von Sachanlagen (AfA)",
             type="Expense",
         )
         session.add(depr_exp_acc)

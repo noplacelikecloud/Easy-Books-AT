@@ -16,7 +16,7 @@ from routers.common import (
 )
 from services.inventory import reverse_consumption
 from services.money import D, ONE, ZERO, money
-from services.posting import EntryInput, post_transaction
+from services.posting import EntryInput, balance_legs_against, post_transaction
 from services.permissions import perm_dep, apply_own_filter
 
 router = APIRouter(prefix="/api/credit-notes", tags=["credit-notes"], dependencies=[perm_dep("credit_notes")])
@@ -189,15 +189,18 @@ def create_credit_note(session: SessionDep, user: WriteUserDep, body: CNCreate):
     else:
         rev_acc = get_or_create_account(session, user.tenant_id, "4000", "Sales Revenue", "Revenue")
 
-    entries = [
+    # AR carries the note total in base currency and stays exact; the value legs
+    # are converted and rounded on their own, so their sum can miss it by a
+    # rounding unit — balance_legs_against books that residual on the largest leg.
+    legs = [
         EntryInput(account_id=rev_acc.id, debit=subtotal_base),   # reduce revenue
     ]
     if gst_base > ZERO:
         gst_acc = get_or_create_account(
             session, user.tenant_id, "2200", "GST Payable (Output)", "Liability"
         )
-        entries.append(EntryInput(account_id=gst_acc.id, debit=gst_base))  # reverse output GST
-    entries.append(EntryInput(account_id=ar_acc.id, credit=total_base))    # reduce AR
+        legs.append(EntryInput(account_id=gst_acc.id, debit=gst_base))  # reverse output GST
+    entries = balance_legs_against(legs, EntryInput(account_id=ar_acc.id, credit=total_base))  # reduce AR
 
     txn = post_transaction(
         session,
