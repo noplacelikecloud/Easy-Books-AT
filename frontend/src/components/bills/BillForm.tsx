@@ -9,6 +9,7 @@ import { useFmt, useSettings } from '@/context/SettingsContext'
 import LineItemsTable, { LineItem, TaxCodeOption, TaxTreatmentOption } from '@/components/LineItemsTable'
 import { CustomFieldsInputs, type CustomFieldValues } from '@/components/studio/CustomFieldsInputs'
 import { useFormSchema } from '@/components/studio/formSchema'
+import { useTranslation } from 'react-i18next'
 
 export interface BillFull {
   id: number
@@ -103,6 +104,7 @@ interface Props {
 }
 
 export default function BillForm({ mode, bill, initialVendorId, onSaved, onCancel }: Props) {
+  const { t } = useTranslation()
   const fmt = useFmt()
   const { settings } = useSettings()
   const [form, setForm] = useState<FormState>(emptyForm)
@@ -294,22 +296,22 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">Vendor</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">{t('common.vendor', 'Vendor')}</label>
             <select value={form.vendor_id}
               onChange={e => { const v = vendors.find(v => v.id === parseInt(e.target.value)); setForm(p => ({ ...p, vendor_id: e.target.value, vendor_name: v?.name ?? '' })) }}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm">
-              <option value="">— Select or type name —</option>
+              <option value="">{t('bills.selectOrTypeName', '— Select or type name —')}</option>
               {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
             </select>
           </div>
           {vis('vendor_name') && (
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">
-              Vendor Name
+              {t('common.vendorName', 'Vendor Name')}
               {req('vendor_name') ? <span className="text-red-600"> *</span> : null}
             </label>
             <input value={form.vendor_name} onChange={e => setForm(p => ({ ...p, vendor_name: e.target.value }))}
-              placeholder="or type manually"
+              placeholder={t('bills.orTypeManually', 'or type manually')}
               required={req('vendor_name')}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm" />
           </div>
@@ -328,19 +330,19 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
                 }))}
                 className="rounded border-[var(--border)]"
               />
-              Intercompany bill
+              {t('bills.intercompanyBill', 'Intercompany bill')}
             </label>
             {form.is_intercompany && (
               <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">
-                  IC Counterparty
+                  {t('bills.icCounterparty', 'IC Counterparty')}
                 </label>
                 <select
                   value={form.ic_counterparty_tenant_id}
                   onChange={e => setForm(p => ({ ...p, ic_counterparty_tenant_id: e.target.value }))}
                   className="w-full px-3 py-2 bg-white rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm"
                 >
-                  <option value="">— Select entity —</option>
+                  <option value="">{t('bills.selectEntity', '— Select entity —')}</option>
                   {icCounterparties.map(c => (
                     <option key={c.tenant_id} value={c.tenant_id}>{c.name}</option>
                   ))}
@@ -351,13 +353,13 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">Bill Date</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">{t('bills.billDate', 'Bill Date')}</label>
             <input type="date" value={form.bill_date} onChange={e => setForm(p => ({ ...p, bill_date: e.target.value }))}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm" />
           </div>
           {vis('payment_term_id') && (
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">Payment Term</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">{t('common.paymentTerm', 'Payment Term')}</label>
             <select
               value={form.payment_term_id}
               onChange={e => {
@@ -372,7 +374,7 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
               }}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm"
             >
-              <option value="">— select —</option>
+              <option value="">{t('common.selectOption', '— select —')}</option>
               {paymentTerms.map(t => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
@@ -380,7 +382,7 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
           </div>
           )}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">Due Date</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">{t('bills.dueDate', 'Due Date')}</label>
             <input type="date" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm" />
           </div>
@@ -388,7 +390,7 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
         {vis('description') && (
         <div>
           <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">
-            Description
+            {t('common.description', 'Description')}
             {req('description') ? <span className="text-red-600"> *</span> : null}
           </label>
           <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
@@ -434,17 +436,17 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
         )}
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-2">Line Items</label>
+          <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-2">{t('common.lineItems', 'Line Items')}</label>
           <LineItemsTable lines={lines} onChange={setLines} products={products} taxCodes={taxCodes.filter(t => t.type === 'input')} taxTreatments={atActive ? AT_PURCHASE_TREATMENTS : []} showTax={!atActive} showStockHint customerId={form.vendor_id ? Number(form.vendor_id) : null} priceKind="purchase" hideDiscount={!vis('discount_pct')} />
         </div>
 
         <div className="bg-[var(--bg-page)] rounded-xl p-4 space-y-1 text-sm">
           <div className="flex justify-between">
-            <span className="text-[var(--text-muted)]">Subtotal</span>
+            <span className="text-[var(--text-muted)]">{t('common.subtotal', 'Subtotal')}</span>
             <span className="font-mono">{fmt(subtotal)}</span>
           </div>
           <div className="flex justify-between items-center gap-2">
-            <span className="text-[var(--text-muted)]">Tax</span>
+            <span className="text-[var(--text-muted)]">{t('common.tax', 'Tax')}</span>
             {atActive ? (
               <span className="font-mono text-xs text-[var(--text-muted)]">(nach AT-Steuerbehandlung) {fmt(gstAmount)}</span>
             ) : usePerLineTax ? (
@@ -464,7 +466,7 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
             )}
           </div>
           <div className="flex justify-between border-t border-[var(--border)] pt-2 font-bold">
-            <span>Total ({form.currency})</span>
+            <span>{t('common.total', 'Total')} ({form.currency})</span>
             <span className="font-mono text-[var(--text-primary)]">{fmt(totalAmount)}</span>
           </div>
           {form.currency !== settings.currency && parseFloat(form.exchange_rate) > 0 && (
@@ -480,20 +482,20 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
           {vis('notes') && (
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">
-              Notes (printed)
+              {t('common.notes', 'Notes')}
               {req('notes') ? <span className="text-red-600"> *</span> : null}
             </label>
             <textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-              placeholder="Printed on the bill for the vendor"
+              placeholder={t('bills.notesPlaceholder', 'Printed on the bill for the vendor')}
               required={req('notes')}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm resize-none" />
           </div>
           )}
           {vis('internal_memo') && (
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-amber-700/70 mb-1">Internal Memo</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-amber-700/70 mb-1">{t('common.internalMemo', 'Internal Memo')}</label>
             <textarea rows={2} value={form.internal_memo} onChange={e => setForm(p => ({ ...p, internal_memo: e.target.value }))}
-              placeholder="Staff-only note, not printed"
+              placeholder={t('bills.internalMemoPlaceholder', 'Staff-only note, not printed')}
               className="w-full px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-400 text-sm resize-none" />
           </div>
           )}
@@ -509,31 +511,31 @@ export default function BillForm({ mode, bill, initialVendorId, onSaved, onCance
         {formError && <p className="text-red-600 text-sm">{formError}</p>}
         {confirmPostedEdit && (
           <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 text-sm text-amber-900">
-            <p className="font-semibold mb-1">Confirm posted-bill edit</p>
-            <p className="mb-3">This will reverse the original ledger entry and post a correction, keeping the same document number. Continue?</p>
+            <p className="font-semibold mb-1">{t('bills.confirmPostedEditTitle', 'Confirm posted-bill edit')}</p>
+            <p className="mb-3">{t('bills.confirmPostedEditMsg', 'This will reverse the original ledger entry and post a correction, keeping the same document number. Continue?')}</p>
             <div className="flex gap-2">
               <button
                 onClick={handleSave}
                 disabled={saving}
                 className="px-4 py-2 bg-amber-700 text-white rounded-lg font-bold hover:bg-amber-800 disabled:opacity-50 text-xs"
               >
-                {saving ? 'Saving…' : 'Yes, post correction'}
+                {saving ? t('bills.posting', 'Saving…') : t('bills.yesPostCorrection', 'Yes, post correction')}
               </button>
               <button
                 onClick={() => setConfirmPostedEdit(false)}
                 className="px-4 py-2 border border-amber-400 text-amber-800 rounded-lg font-bold hover:bg-amber-100 text-xs"
               >
-                Cancel
+                {t('common.cancel', 'Cancel')}
               </button>
             </div>
           </div>
         )}
-        <p className="text-xs text-[var(--text-muted)]">GL posting: Dr Expense / Dr GST Receivable / Cr Accounts Payable</p>
+        <p className="text-xs text-[var(--text-muted)]">{t('bills.glPostingHint', 'GL posting: Dr Expense / Dr GST Receivable / Cr Accounts Payable')}</p>
         <div className="flex justify-end gap-3 pt-2">
-          <button onClick={() => { setConfirmPostedEdit(false); onCancel() }} className="px-6 py-3 border border-[var(--text-primary)]/10 rounded-xl font-bold hover:bg-[var(--bg-page)]">Cancel</button>
+          <button onClick={() => { setConfirmPostedEdit(false); onCancel() }} className="px-6 py-3 border border-[var(--text-primary)]/10 rounded-xl font-bold hover:bg-[var(--bg-page)]">{t('common.cancel', 'Cancel')}</button>
           {!confirmPostedEdit && (
             <button onClick={handleSave} disabled={saving} className="px-6 py-3 bg-[var(--text-primary)] text-white rounded-xl font-bold hover:bg-[var(--primary)] hover:text-black transition-all disabled:opacity-50">
-              {saving ? 'Posting...' : mode === 'edit' ? 'Save Changes' : 'Post Bill'}
+              {saving ? t('bills.posting', 'Posting...') : mode === 'edit' ? t('common.saveChanges', 'Save Changes') : t('bills.postBill', 'Post Bill')}
             </button>
           )}
         </div>

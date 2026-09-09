@@ -1,6 +1,7 @@
 "use client"
 
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 interface PaginationProps {
   page: number
@@ -10,6 +11,7 @@ interface PaginationProps {
 }
 
 export default function Pagination({ page, pageSize, total, onPage }: PaginationProps) {
+  const { t } = useTranslation()
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   if (totalPages <= 1) return null
 
@@ -23,14 +25,17 @@ export default function Pagination({ page, pageSize, total, onPage }: Pagination
     pageNums = Array.from({ length: windowSize }, (_, i) => start + i)
   }
 
+  const startIdx = Math.min((page - 1) * pageSize + 1, total)
+  const endIdx = Math.min(page * pageSize, total)
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-3 print:hidden">
       <span className="text-xs text-[var(--text-muted)] tabular-nums">
         <span className="sm:hidden">
-          {Math.min((page - 1) * pageSize + 1, total)}–{Math.min(page * pageSize, total)} / {total}
+          {startIdx}–{endIdx} / {total}
         </span>
         <span className="hidden sm:inline">
-          Showing {Math.min((page - 1) * pageSize + 1, total)}–{Math.min(page * pageSize, total)} of {total}
+          {t('common.showingOf', { start: startIdx, end: endIdx, total, defaultValue: `Showing ${startIdx}–${endIdx} of ${total}` })}
         </span>
       </span>
       <div className="flex items-center gap-1 ml-auto">
@@ -38,7 +43,7 @@ export default function Pagination({ page, pageSize, total, onPage }: Pagination
           onClick={() => onPage(page - 1)}
           disabled={page <= 1}
           className="w-8 h-8 flex items-center justify-center rounded border border-[var(--border)] hover:bg-[var(--bg-page)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          aria-label="Previous page"
+          aria-label={t('common.previousPage', 'Previous page')}
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -86,7 +91,7 @@ export default function Pagination({ page, pageSize, total, onPage }: Pagination
           onClick={() => onPage(page + 1)}
           disabled={page >= totalPages}
           className="w-8 h-8 flex items-center justify-center rounded border border-[var(--border)] hover:bg-[var(--bg-page)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          aria-label="Next page"
+          aria-label={t('common.nextPage', 'Next page')}
         >
           <ChevronRight className="w-4 h-4" />
         </button>

@@ -81,22 +81,22 @@ export default function ARAgingPage() {
     <div className="max-w-5xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 print:hidden">
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold text-[var(--text-primary)]">AR Aging</h1>
-          <p className="text-[var(--text-primary)]/60">Outstanding receivables by age bucket</p>
+          <h1 className="text-xl sm:text-3xl font-bold text-[var(--text-primary)]">{t('page.arAging', 'AR Aging')}</h1>
+          <p className="text-[var(--text-primary)]/60">{t('reports.arAgingSub', 'Outstanding receivables by age bucket')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={exportCsv}
             disabled={!data}
             className="p-3 bg-white border border-[var(--text-primary)]/10 rounded-xl hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60 disabled:opacity-40"
-            title="Export CSV"
+            title={t('common.exportCsv', 'Export CSV')}
           >
             <Download className="w-5 h-5" />
           </button>
           <button
             onClick={() => window.print()}
             className="p-3 bg-white border border-[var(--text-primary)]/10 rounded-xl hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60"
-            title="Print"
+            title={t('common.print', 'Print')}
           >
             <Printer className="w-5 h-5" />
           </button>
@@ -104,13 +104,18 @@ export default function ARAgingPage() {
         </div>
       </div>
 
-      <PrintHeader title="AR Aging Report" subtitle={`As of ${fmtDateJs(new Date())}`} orientation="landscape" />
+      <PrintHeader title={t('page.arAging', 'AR Aging Report')} subtitle={`${t('reports.asOf', 'As of')} ${fmtDateJs(new Date())}`} orientation="landscape" />
 
       {/* Bucket summary cards — click to filter the table below */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3 print:hidden">
         {BUCKETS.map(b => {
           const isActive = selectedBucket === b.key
           const isDimmed = selectedBucket !== null && !isActive
+          const bLabel = b.key === "current" ? t('reports.bucketCurrent', 'Current')
+            : b.key === "1_30" ? t('reports.bucket1_30', '1-30 Days')
+            : b.key === "31_60" ? t('reports.bucket31_60', '31-60 Days')
+            : b.key === "61_90" ? t('reports.bucket61_90', '61-90 Days')
+            : t('reports.bucket90Plus', '90+ Days')
           return (
             <button
               key={b.key}
@@ -118,9 +123,9 @@ export default function ARAgingPage() {
               className={`rounded-xl border p-4 text-left transition-all select-none ${b.color}
                 ${isActive ? "ring-2 ring-inset shadow-md scale-[1.02]" : "hover:shadow-sm hover:scale-[1.01]"}
                 ${isDimmed ? "opacity-40" : ""}`}
-              title={isActive ? "Click to show all" : `Filter by ${b.label}`}
+              title={isActive ? t('common.all', 'Show all') : bLabel}
             >
-              <p className="text-xs font-bold uppercase tracking-widest mb-1 opacity-70">{b.label}</p>
+              <p className="text-xs font-bold uppercase tracking-widest mb-1 opacity-70">{bLabel}</p>
               <p className="text-lg font-mono font-bold">
                 {data ? fmt(data[b.key as keyof AgingData] as number) : "—"}
               </p>
@@ -136,13 +141,13 @@ export default function ARAgingPage() {
       {selectedBucket && (
         <div className="flex items-center justify-between mb-4 px-1 print:hidden">
           <p className="text-xs text-[var(--text-primary)]/50">
-            Showing <strong>{filteredItems.length}</strong> item{filteredItems.length !== 1 ? "s" : ""} in <strong>{activeBucket?.label}</strong>
+            {t('common.showing', 'Showing')} <strong>{filteredItems.length}</strong> {t('common.items', 'item(s)')}
           </p>
           <button
             onClick={() => setSelectedBucket(null)}
             className="text-xs text-[var(--primary)] hover:underline underline-offset-2"
           >
-            Show all
+            {t('common.all', 'Show all')}
           </button>
         </div>
       )}
@@ -155,15 +160,15 @@ export default function ARAgingPage() {
             <thead>
               <tr className="bg-[var(--bg-page)] border-b border-[var(--text-primary)]/5">
                 <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">{t('col.customer', 'Customer')}</th>
-                <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Invoice #</th>
+                <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">{t('col.invoiceNumber', 'Invoice #')}</th>
                 <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">{t('col.dueDate', 'Due Date')}</th>
-                <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 text-right">Days Past</th>
-                <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">CCY</th>
-                <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 text-right">Outstanding</th>
+                <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 text-right">{t('col.daysPastDue', 'Days Past')}</th>
+                <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">{t('col.currency', 'CCY')}</th>
+                <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 text-right">{t('col.outstanding', 'Outstanding')}</th>
                 <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 text-right">
-                  Base ({data?.base_currency || baseCurrency})
+                  {t('col.base', 'Base')} ({data?.base_currency || baseCurrency})
                 </th>
-                <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Bucket</th>
+                <th className="ui-th text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">{t('col.status', 'Bucket')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--text-primary)]/5">

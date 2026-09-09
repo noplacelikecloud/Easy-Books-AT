@@ -1,6 +1,19 @@
-# Caddy reverse proxy (#116) — automatic TLS via Let's Encrypt.
-# Set your real hostnames; Caddy obtains certs on first boot.
+# Caddy reverse proxy (#116)
+# Default :80 handles local/IP access (http://localhost) seamlessly
+:80 {
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+	handle /uploads/* {
+		reverse_proxy backend:8000
+	}
+	handle {
+		reverse_proxy frontend:3000
+	}
+	encode gzip
+}
 
+# Optional TLS virtual hosts when custom domain names are configured
 {$API_HOST:api.easy-books.app} {
 	reverse_proxy backend:8000
 	encode gzip
@@ -10,6 +23,14 @@
 }
 
 {$APP_HOST:app.easy-books.app} {
-	reverse_proxy frontend:3000
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+	handle /uploads/* {
+		reverse_proxy backend:8000
+	}
+	handle {
+		reverse_proxy frontend:3000
+	}
 	encode gzip
 }

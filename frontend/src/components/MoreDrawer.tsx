@@ -8,6 +8,7 @@ import { mobileMoreSections, MOBILE_MORE_SECTION_ORDER, SUB_NAV, navVisible, nav
 import { cn } from "@/lib/utils"
 import { useModules } from "@/context/ModuleContext"
 import { getCurrentUser } from "@/lib/auth"
+import { useTranslation } from "react-i18next"
 
 interface Props {
   open: boolean
@@ -44,6 +45,7 @@ function loadCollapsed(sectionKeys: string[]): Set<string> {
 export default function MoreDrawer({ open, onClose }: Props) {
   const pathname             = usePathname()
   const { installedModules } = useModules()
+  const { t }                = useTranslation()
   const [isAdmin, setIsAdmin] = useState(false)
   const sections = useMemo(() => mobileMoreSections(), [])
   // SSR-safe default: priority sections expanded; localStorage applied after mount
@@ -105,14 +107,14 @@ export default function MoreDrawer({ open, onClose }: Props) {
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] shrink-0">
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-[var(--text-primary)]">Menu</span>
-            <span className="text-[10px] text-[var(--text-muted)]">Tap a heading to expand</span>
+            <span className="text-sm font-bold text-[var(--text-primary)]">{t("nav.Menu", "Menu")}</span>
+            <span className="text-[10px] text-[var(--text-muted)]">{t("common.tapToExpand", "Tap a heading to expand")}</span>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="p-2 -mr-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-row-hover)]"
-            aria-label="Close menu"
+            aria-label={t("common.close", "Close menu")}
           >
             <X className="w-5 h-5" />
           </button>
@@ -123,13 +125,15 @@ export default function MoreDrawer({ open, onClose }: Props) {
             const notInstalled = section.forModule && !installedModules.has(section.forModule)
             const isActiveSection = activeKey === section.key
             const isCollapsed = collapsed.has(section.key) && !notInstalled
+            const rawLabel = section.shortLabel ?? section.label
+            const sectionLabel = t(`section.${section.key}`, t(`section.${rawLabel}`, t(`nav.${rawLabel}`, rawLabel)))
 
             if (notInstalled) {
               return (
                 <div key={section.key} className="mb-1">
                   <div className="flex items-center justify-between px-3 py-2.5">
                     <span className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)]/60">
-                      {section.shortLabel ?? section.label}
+                      {sectionLabel}
                     </span>
                     <Link
                       href="/apps"
@@ -165,7 +169,7 @@ export default function MoreDrawer({ open, onClose }: Props) {
                   )}
                 >
                   <span className="text-[11px] font-bold uppercase tracking-widest">
-                    {section.shortLabel ?? section.label}
+                    {sectionLabel}
                   </span>
                   <ChevronDown
                     className={cn(
@@ -195,7 +199,7 @@ export default function MoreDrawer({ open, onClose }: Props) {
                               : "text-[var(--text-muted)] hover:bg-[var(--bg-row-hover)] hover:text-[var(--text-primary)]"
                           )}
                         >
-                          Overview
+                          {t("nav.Overview", "Overview")}
                         </Link>
                       )}
                       {items.map((item) => (
@@ -211,7 +215,7 @@ export default function MoreDrawer({ open, onClose }: Props) {
                           )}
                         >
                           <item.icon className="w-4 h-4 shrink-0 opacity-70" />
-                          <span className="truncate">{item.label}</span>
+                          <span className="truncate">{t(`nav.${item.label}`, item.label)}</span>
                         </Link>
                       ))}
                     </div>

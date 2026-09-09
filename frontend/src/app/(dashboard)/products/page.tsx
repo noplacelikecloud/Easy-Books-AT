@@ -158,13 +158,13 @@ function ProductsInner() {
 
   return (
     <div className="space-y-6">
-      <PrintHeader title="Products" orientation="landscape" />
+      <PrintHeader title={t('nav.Products', 'Products')} orientation="landscape" />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-xl sm:text-3xl font-bold flex items-center gap-2">
-            <Package className="w-7 h-7 text-[var(--primary)]" /> Products
+            <Package className="w-7 h-7 text-[var(--primary)]" /> {t('nav.Products', 'Products')}
           </h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Manage product catalog and track inventory</p>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{t('products.subtitle', 'Manage product catalog and track inventory')}</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
@@ -173,14 +173,14 @@ function ProductsInner() {
               className={`flex items-center gap-1.5 px-3 py-2 text-sm font-bold transition-colors ${view === 'list' ? 'bg-[var(--text-primary)] text-white' : 'bg-white text-[var(--text-muted)] hover:bg-[var(--bg-page)]'}`}
               title="List view"
             >
-              <List className="w-4 h-4" /> List
+              <List className="w-4 h-4" /> {t('common.list', 'List')}
             </button>
             <button
               onClick={() => setView('tree')}
               className={`flex items-center gap-1.5 px-3 py-2 text-sm font-bold transition-colors ${view === 'tree' ? 'bg-[var(--text-primary)] text-white' : 'bg-white text-[var(--text-muted)] hover:bg-[var(--bg-page)]'}`}
               title="Category valuation tree"
             >
-              <FolderTree className="w-4 h-4" /> Tree
+              <FolderTree className="w-4 h-4" /> {t('common.tree', 'Tree')}
             </button>
           </div>
           <CsvImportButton entity="products" onSuccess={load} />
@@ -191,35 +191,35 @@ function ProductsInner() {
             })))}
             className="flex items-center gap-2 px-4 py-2 border border-[var(--border)] rounded-lg text-sm font-bold hover:bg-[var(--bg-page)] transition-colors"
           >
-            <Download className="w-4 h-4" /> Export
+            <Download className="w-4 h-4" /> {t('common.export', 'Export')}
           </button>
           <button
             onClick={() => window.print()}
             className="flex items-center gap-2 px-4 py-2 border border-[var(--border)] rounded-lg text-sm font-bold hover:bg-[var(--bg-page)] transition-colors"
-            title="Print"
+            title={t('common.print', 'Print')}
           >
             <Printer className="w-4 h-4" />{t('common.print', 'Print')}</button>
           <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-dark)]">
-            <Plus className="w-4 h-4" /> Add Product
+            <Plus className="w-4 h-4" /> {t('products.addProduct', 'Add Product')}
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg border border-[var(--border)] p-4">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Total Products</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('products.totalProducts', 'Total Products')}</p>
           <p className="text-2xl font-bold text-[var(--primary)] mt-1">{total}</p>
         </div>
         <div className="bg-white rounded-lg border border-[var(--border)] p-4">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Stock Items</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('products.stockItems', 'Stock Items')}</p>
           <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{products.filter(p => p.product_type === 'stock').length}</p>
         </div>
         <div className="bg-white rounded-lg border border-[var(--border)] p-4">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Low Stock</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('hub.Low Stock', 'Low Stock')}</p>
           <p className="text-2xl font-bold text-amber-600 mt-1">{products.filter(p => p.product_type === 'stock' && p.stock_qty > 0 && p.stock_qty <= p.reorder_level).length}</p>
         </div>
         <div className="bg-white rounded-lg border border-[var(--border)] p-4">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Out of Stock</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('hub.Out of Stock', 'Out of Stock')}</p>
           <p className="text-2xl font-bold text-red-600 mt-1">{products.filter(p => p.product_type === 'stock' && p.stock_qty <= 0).length}</p>
         </div>
       </div>
@@ -229,7 +229,7 @@ function ProductsInner() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-3 w-4 h-4 text-[var(--text-muted)]" />
           <input
-            type="text" placeholder="Search products..."
+            type="text" placeholder={t('products.searchPlaceholder', 'Search products...')}
             value={search} onChange={e => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
           />
@@ -240,7 +240,7 @@ function ProductsInner() {
             onChange={e => setCategoryFilter(e.target.value)}
             className="px-3 py-2 border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] bg-white"
           >
-            <option value="">All Categories</option>
+            <option value="">{t('products.allCategories', 'All Categories')}</option>
             {allCatsFlat.map(c => <option key={c.id} value={String(c.id)}>{c.label}</option>)}
           </select>
         )}
@@ -248,7 +248,7 @@ function ProductsInner() {
           onClick={() => setLowStockOnly(v => !v)}
           className={`px-4 py-2 rounded-lg text-sm font-bold border transition-colors ${lowStockOnly ? 'bg-amber-100 border-amber-300 text-amber-700' : 'border-[var(--border)] hover:bg-[var(--bg-page)] text-[var(--text-muted)]'}`}
         >
-          {lowStockOnly ? 'Low Stock Only ✓' : 'Low Stock Filter'}
+          {lowStockOnly ? t('products.lowStockOnly', 'Low Stock Only ✓') : t('products.lowStockFilter', 'Low Stock Filter')}
         </button>
       </div>
       )}
@@ -268,14 +268,14 @@ function ProductsInner() {
                   onChange={e => setSelectedIds(e.target.checked ? new Set(products.map(p => p.id)) : new Set())}
                 />
               </th>
-              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Code</th>
-              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Name</th>
+              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.code', 'Code')}</th>
+              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.name', 'Name')}</th>
               <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.category', 'Category')}</th>
-              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Type</th>
+              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.type', 'Type')}</th>
               <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.unit', 'Unit')}</th>
-              <th className="ui-th text-right text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Selling Price</th>
-              <th className="ui-th text-right text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Cost Price</th>
-              <th className="ui-th text-right text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Stock Qty</th>
+              <th className="ui-th text-right text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.sellingPrice', 'Selling Price')}</th>
+              <th className="ui-th text-right text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.costPrice', 'Cost Price')}</th>
+              <th className="ui-th text-right text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.stockQty', 'Stock Qty')}</th>
               <th className="ui-th text-center text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.status', 'Status')}</th>
               <th className="ui-th" />
             </tr>
@@ -288,9 +288,9 @@ function ProductsInner() {
                 <td colSpan={11} className="px-6 py-16 text-center">
                   <div className="inline-flex flex-col items-center gap-3">
                     <Package className="w-10 h-10 text-[var(--border)]" />
-                    <p className="text-sm text-[var(--text-muted)] font-medium">No products yet</p>
+                    <p className="text-sm text-[var(--text-muted)] font-medium">{t('products.noProducts', 'No products yet')}</p>
                     <button onClick={openAdd} className="px-4 py-2 bg-[var(--primary)] text-white text-sm font-medium rounded-lg hover:bg-[var(--primary-dark)] transition-colors">
-                      + Add Product
+                      + {t('products.addProduct', 'Add Product')}
                     </button>
                   </div>
                 </td>
@@ -334,8 +334,8 @@ function ProductsInner() {
                 </td>
                 <td className="ui-td text-center">{stockBadge(p)}</td>
                 <td className="ui-td flex items-center gap-3">
-                  <Link href={`/products/${p.id}`} className="text-[var(--text-primary)]/60 text-sm hover:underline">View</Link>
-                  <button onClick={() => router.push(`/products/${p.id}/edit`)} className="text-[var(--primary)] text-sm font-bold hover:underline">Edit</button>
+                  <Link href={`/products/${p.id}`} className="text-[var(--text-primary)]/60 text-sm hover:underline">{t('common.view', 'View')}</Link>
+                  <button onClick={() => router.push(`/products/${p.id}/edit`)} className="text-[var(--primary)] text-sm font-bold hover:underline">{t('common.edit', 'Edit')}</button>
                   <button onClick={() => handleDelete(p)} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                 </td>
               </tr>
@@ -347,9 +347,9 @@ function ProductsInner() {
         {/* Mobile card list */}
         <div className="md:hidden divide-y divide-[var(--border)]">
           {isLoading ? (
-            <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">Loading…</div>
+            <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">{t('common.loading', 'Loading…')}</div>
           ) : products.length === 0 ? (
-            <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">No products yet</div>
+            <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">{t('products.noProducts', 'No products yet')}</div>
           ) : products.map(p => (
             <Link
               key={p.id}

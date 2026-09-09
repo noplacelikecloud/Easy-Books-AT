@@ -38,7 +38,7 @@ def upgrade() -> None:
                 "is_group",
                 sa.Boolean(),
                 nullable=False,
-                server_default=sa.text("0"),  # SQLite uses 0/1 for booleans
+                server_default=sa.false(),
             ),
         )
         op.create_index(op.f("ix_account_is_group"), "account", ["is_group"], unique=False)
@@ -50,7 +50,7 @@ def upgrade() -> None:
                 "is_active",
                 sa.Boolean(),
                 nullable=False,
-                server_default=sa.text("1"),  # existing rows → active
+                server_default=sa.true(),  # existing rows → active
             ),
         )
 

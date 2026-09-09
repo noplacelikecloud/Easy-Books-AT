@@ -156,18 +156,18 @@ function BillsContent() {
 
   return (
     <div className="space-y-6">
-      <PrintHeader title="Bills" orientation="landscape" />
+      <PrintHeader title={t('page.bills', 'Bills')} orientation="landscape" />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 print:hidden">
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold">Bills</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Vendor bills and purchase liabilities</p>
+          <h1 className="text-xl sm:text-3xl font-bold">{t('page.bills', 'Bills')}</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{t('bills.subtitle', 'Vendor bills and purchase liabilities')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => downloadCSV('bills.csv', bills.map(b => ({ Number: b.number, Vendor: b.vendor_name, Date: b.bill_date, Due: b.due_date, Currency: b.currency ?? '', Subtotal: b.subtotal, GST: b.gst_amount, Total: b.total, Status: b.status })))}
             className="flex items-center gap-2 px-4 py-2 border border-[var(--border)] rounded-lg text-sm font-bold hover:bg-[var(--bg-page)] transition-colors"
           >
-            <Download className="w-4 h-4" /> Export
+            <Download className="w-4 h-4" /> {t('common.export', 'Export')}
           </button>
           <button
             onClick={() => window.print()}
@@ -175,22 +175,22 @@ function BillsContent() {
           >
             <Printer className="w-4 h-4" />{t('common.print', 'Print')}</button>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-dark)]">
-            <Plus className="w-4 h-4" /> New Bill
+            <Plus className="w-4 h-4" /> {t('bills.newBill', 'New Bill')}
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
         <div className="bg-white rounded-lg border border-[var(--border)] p-6">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Total Payable</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('bills.totalPayable', 'Total Payable')}</p>
           <p className="text-2xl font-bold text-orange-600 mt-2">{fmt(payable)}</p>
         </div>
         <div className="bg-white rounded-lg border border-[var(--border)] p-6">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Total Paid</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('bills.totalPaid', 'Total Paid')}</p>
           <p className="text-2xl font-bold text-green-600 mt-2">{fmt(paid)}</p>
         </div>
         <div className="bg-white rounded-lg border border-[var(--border)] p-6">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Total Bills</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('bills.totalBills', 'Total Bills')}</p>
           <p className="text-2xl font-bold text-[var(--text-primary)] mt-2">{total}</p>
         </div>
       </div>
@@ -198,13 +198,13 @@ function BillsContent() {
       {vendorFilter && (
         <div className="flex items-center gap-2 text-sm">
           <span className="bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 rounded-full px-3 py-1 font-medium">
-            Vendor: {vendorFilter.name}
+            {t('bills.vendorFilter', { name: vendorFilter.name, defaultValue: `Vendor: ${vendorFilter.name}` })}
           </span>
           <button
             onClick={() => setVendorFilter(null)}
             className="text-[var(--text-primary)]/40 hover:text-red-500 text-xs transition-colors"
           >
-            Clear filter
+            {t('bills.clearFilter', 'Clear filter')}
           </button>
         </div>
       )}
@@ -214,7 +214,7 @@ function BillsContent() {
         statuses={BILL_STATUSES} status={status} onStatus={setStatus}
         dateFrom={dateFrom} dateTo={dateTo}
         onDateFrom={setDateFrom} onDateTo={setDateTo}
-        placeholder="Search by bill # or vendor…"
+        placeholder={t('bills.searchPlaceholder', 'Search by bill # or vendor…')}
       />
 
       <div className="bg-white rounded-xl border border-[var(--border)] overflow-hidden">
@@ -229,12 +229,12 @@ function BillsContent() {
                     onChange={e => setSelectedIds(e.target.checked ? new Set(bills.map(b => b.id)) : new Set())}
                   />
                 </th>
-                <SortableHeader label="Bill #"     field="number"      sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                <SortableHeader label="Vendor"     field="vendor_name" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                <SortableHeader label="Bill Date"  field="bill_date"   sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                <SortableHeader label="Due Date"   field="due_date"    sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                <SortableHeader label="Total"      field="total"       sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-right" />
-                <SortableHeader label="Status"     field="status"      sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-center" />
+                <SortableHeader label={t('col.bill', 'Bill #')}     field="number"      sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                <SortableHeader label={t('col.vendor', 'Vendor')}     field="vendor_name" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                <SortableHeader label={t('col.billDate', 'Bill Date')}  field="bill_date"   sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                <SortableHeader label={t('col.dueDate', 'Due Date')}   field="due_date"    sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                <SortableHeader label={t('col.total', 'Total')}      field="total"       sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                <SortableHeader label={t('col.status', 'Status')}     field="status"      sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-center" />
                 <th className="ui-th print:hidden" />
               </tr>
             </thead>
@@ -246,9 +246,9 @@ function BillsContent() {
                   <td colSpan={8} className="px-6 py-16 text-center">
                     <div className="inline-flex flex-col items-center gap-3">
                       <Receipt className="w-10 h-10 text-[var(--border)]" />
-                      <p className="text-sm text-[var(--text-muted)] font-medium">No bills yet</p>
+                      <p className="text-sm text-[var(--text-muted)] font-medium">{t('bills.noBills', 'No bills yet')}</p>
                       <button onClick={openCreate} className="px-4 py-2 bg-[var(--primary)] text-white text-sm font-medium rounded-lg hover:bg-[var(--primary-dark)] transition-colors">
-                        + Record Bill
+                        + {t('bills.newBill', 'Record Bill')}
                       </button>
                     </div>
                   </td>
@@ -292,12 +292,12 @@ function BillsContent() {
                           onClick={() => router.push(`/bills/${b.id}/edit`)}
                           className="text-xs px-2 py-1 border border-[var(--primary)]/40 text-[var(--primary)] rounded hover:bg-[var(--bg-page)]"
                         >
-                          Edit
+                          {t('common.edit', 'Edit')}
                         </button>
                       )}
                       <Link
                         href={`/bills/${b.id}/print`}
-                        title="Print this bill"
+                        title={t('common.print', 'Print')}
                         className="p-1.5 rounded border border-[var(--border)] hover:bg-[var(--bg-page)] text-[var(--text-primary)]/55 hover:text-[var(--primary)]"
                       >
                         <Printer className="w-3.5 h-3.5" />
@@ -313,9 +313,9 @@ function BillsContent() {
         {/* Mobile card list */}
         <div className="md:hidden divide-y divide-[var(--border)]">
           {loading ? (
-            <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">Loading…</div>
+            <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">{t('common.loading', 'Loading…')}</div>
           ) : bills.length === 0 ? (
-            <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">No bills yet</div>
+            <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">{t('bills.noBills', 'No bills yet')}</div>
           ) : bills.map(b => (
             <Link
               key={b.id}

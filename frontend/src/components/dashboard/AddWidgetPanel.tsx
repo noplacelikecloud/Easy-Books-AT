@@ -41,21 +41,21 @@ export default function AddWidgetPanel({ items, meta, onAdd, onClose, view = "fi
     <div className="bg-white border border-[var(--border)] rounded-xl p-3 shadow-sm">
       <div className="flex items-center gap-2 mb-3">
         <div className="flex items-center gap-1 text-xs">
-          <button onClick={() => setTab("widgets")} className={`px-2.5 py-1 rounded-lg font-semibold ${tab === "widgets" ? "bg-[var(--bg-page)] text-[var(--primary)]" : "text-[var(--text-primary)]/55"}`}>Widgets</button>
-          <button onClick={() => setTab("shortcuts")} className={`px-2.5 py-1 rounded-lg font-semibold ${tab === "shortcuts" ? "bg-[var(--bg-page)] text-[var(--primary)]" : "text-[var(--text-primary)]/55"}`}>Shortcuts</button>
+          <button onClick={() => setTab("widgets")} className={`px-2.5 py-1 rounded-lg font-semibold ${tab === "widgets" ? "bg-[var(--bg-page)] text-[var(--primary)]" : "text-[var(--text-primary)]/55"}`}>{t('dashboard.widgets', 'Widgets')}</button>
+          <button onClick={() => setTab("shortcuts")} className={`px-2.5 py-1 rounded-lg font-semibold ${tab === "shortcuts" ? "bg-[var(--bg-page)] text-[var(--primary)]" : "text-[var(--text-primary)]/55"}`}>{t('dashboard.shortcuts', 'Shortcuts')}</button>
         </div>
-        <button onClick={onClose} className="ml-auto text-[var(--text-primary)]/40 hover:text-[var(--text-primary)]/70" aria-label="Close add-widget panel">
+        <button onClick={onClose} className="ml-auto text-[var(--text-primary)]/40 hover:text-[var(--text-primary)]/70" aria-label={t('common.close', 'Close')}>
           <X className="w-4 h-4" />
         </button>
       </div>
 
       {tab === "widgets" && (
         <div className="flex flex-wrap gap-2">
-          {coreWidgets.length === 0 && <p className="text-xs text-[var(--text-primary)]/45">All widgets are on the dashboard.</p>}
+          {coreWidgets.length === 0 && <p className="text-xs text-[var(--text-primary)]/45">{t('dashboard.allWidgetsOnDashboard', 'All widgets are on the dashboard.')}</p>}
           {coreWidgets.map(w => (
             <button key={w.id} onClick={() => onAdd(w.id)}
               className="inline-flex items-center gap-1 text-xs border border-[var(--border)] rounded-lg px-2.5 py-1.5 hover:border-[var(--primary)]/40 text-[var(--text-primary)]/70">
-              <Plus className="w-3.5 h-3.5 text-[var(--primary)]" /> {w.title}
+              <Plus className="w-3.5 h-3.5 text-[var(--primary)]" /> {t('widget.' + w.id, w.title)}
             </button>
           ))}
         </div>
@@ -68,7 +68,7 @@ export default function AddWidgetPanel({ items, meta, onAdd, onClose, view = "fi
             if (inSection.length === 0) return null
             return (
               <div key={section}>
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/45 mb-1.5">{section}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/45 mb-1.5">{t('nav.' + section, section)}</p>
                 <div className="flex flex-wrap gap-2">
                   {inSection.map(i => {
                     const id = shortcutId(i.href)
@@ -77,7 +77,7 @@ export default function AddWidgetPanel({ items, meta, onAdd, onClose, view = "fi
                     return (
                       <button key={i.href} disabled={added} onClick={() => onAdd(id)}
                         className={`inline-flex items-center gap-1 text-xs border rounded-lg px-2.5 py-1.5 ${added ? "border-[var(--border)] text-[var(--text-primary)]/30 cursor-default" : "border-[var(--border)] text-[var(--text-primary)]/70 hover:border-[var(--primary)]/40"}`}>
-                        <Icon className="w-3.5 h-3.5 text-[var(--primary)]" /> {i.label}
+                        <Icon className="w-3.5 h-3.5 text-[var(--primary)]" /> {t('nav.' + i.label, i.label)}
                       </button>
                     )
                   })}

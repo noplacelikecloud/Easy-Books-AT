@@ -196,7 +196,7 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
                 <FileSignature className="w-4 h-4 text-amber-600" />
-                <h3 className="text-sm font-bold text-amber-900">{ctx.t('common.setupChecklist', 'Setup Checklist')} — {done} of {total} complete</h3>
+                <h3 className="text-sm font-bold text-amber-900">{ctx.t('common.setupChecklist', 'Setup Checklist')} — {ctx.t('common.checklistProgress', { done, total, defaultValue: `${done} of ${total} complete` })}</h3>
                 <div className="flex-1 bg-amber-200 rounded-full h-1.5 max-w-[120px]">
                   <div className="bg-amber-500 h-1.5 rounded-full transition-all" style={{ width: `${done / total * 100}%` }} />
                 </div>
@@ -213,7 +213,7 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
                     <span className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold ${steps[step.key] ? "bg-green-500 text-white" : "bg-amber-200 text-amber-700"}`}>
                       {steps[step.key] ? "✓" : "○"}
                     </span>
-                    {step.label}
+                    {ctx.t('onboarding.' + step.key, step.label)}
                   </Link>
                 ))}
               </div>
@@ -225,7 +225,7 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
                 reloadSettings()
               }}
               className="text-amber-400 hover:text-amber-700 transition-colors flex-shrink-0"
-              title="Dismiss checklist"
+              title={ctx.t('common.dismissChecklist', 'Dismiss checklist')}
             >
               ✕
             </button>
@@ -261,8 +261,8 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
       const { s, fmt } = ctx
       return (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <KpiCard title={ctx.t('dashboard.outstandingAr', 'AR Outstanding')}  value={s ? fmt(s.ar_outstanding) : null}         icon={ArrowDownLeft} iconClass="text-green-700"  href="/invoices"                badge={s?.overdue_invoices ? { count: s.overdue_invoices, label: "overdue", className: "bg-red-100 text-red-700" } : undefined} />
-          <KpiCard title={ctx.t('dashboard.outstandingAp', 'AP Outstanding')}  value={s ? fmt(s.ap_outstanding) : null}         icon={ArrowUpRight}  iconClass="text-orange-700" href="/bills"                   badge={s?.unpaid_bills ? { count: s.unpaid_bills, label: "unpaid", className: "bg-orange-100 text-orange-700" } : undefined} />
+          <KpiCard title={ctx.t('dashboard.outstandingAr', 'AR Outstanding')}  value={s ? fmt(s.ar_outstanding) : null}         icon={ArrowDownLeft} iconClass="text-green-700"  href="/invoices"                badge={s?.overdue_invoices ? { count: s.overdue_invoices, label: ctx.t('common.overdue', 'overdue'), className: "bg-red-100 text-red-700" } : undefined} />
+          <KpiCard title={ctx.t('dashboard.outstandingAp', 'AP Outstanding')}  value={s ? fmt(s.ap_outstanding) : null}         icon={ArrowUpRight}  iconClass="text-orange-700" href="/bills"                   badge={s?.unpaid_bills ? { count: s.unpaid_bills, label: ctx.t('common.unpaid', 'unpaid'), className: "bg-orange-100 text-orange-700" } : undefined} />
           <KpiCard title={ctx.t('dashboard.openInvoices', 'Overdue Invoices')} value={s ? s.overdue_invoices.toString() : null} icon={Clock}         iconClass="text-red-600"    href="/invoices"                valueClass={s && s.overdue_invoices > 0 ? "text-red-600 font-bold" : undefined} />
           <KpiCard title={ctx.t('dashboard.lowStock', 'Low Stock Items')}      value={s ? s.low_stock_items.toString() : null}  icon={Package}       iconClass="text-purple-600" href="/products?low_stock=true" valueClass={s && s.low_stock_items > 0 ? "text-amber-600 font-bold" : undefined} />
           <KpiCard title={ctx.t('dashboard.apDueWeek', 'AP Due This Week')}    value={s ? fmt(s.ap_due_week ?? 0) : null}       icon={CalendarClock} iconClass="text-rose-600"   href="/bills"                   valueClass={s && (s.ap_due_week ?? 0) > 0 ? "text-rose-600 font-bold" : undefined} />
@@ -322,10 +322,10 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
       return (s && (s.overdue_invoices > 0 || s.low_stock_items > 0)) ? (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex flex-wrap gap-3 items-center">
           <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-          <span className="text-sm font-medium text-amber-800">Action required:</span>
-          {s.overdue_invoices > 0 && <Link href="/invoices" className="text-sm text-amber-700 underline underline-offset-2 hover:text-amber-900">{s.overdue_invoices} overdue invoice{s.overdue_invoices > 1 ? "s" : ""}</Link>}
+          <span className="text-sm font-medium text-amber-800">{ctx.t('dashboard.actionRequired', 'Action required:')}</span>
+          {s.overdue_invoices > 0 && <Link href="/invoices" className="text-sm text-amber-700 underline underline-offset-2 hover:text-amber-900">{ctx.t('dashboard.overdueInvoicesAlert', { count: s.overdue_invoices, defaultValue: `${s.overdue_invoices} overdue invoice(s)` })}</Link>}
           {s.overdue_invoices > 0 && s.low_stock_items > 0 && <span className="text-amber-400">·</span>}
-          {s.low_stock_items > 0 && <Link href="/products?low_stock=true" className="text-sm text-amber-700 underline underline-offset-2 hover:text-amber-900">{s.low_stock_items} low-stock product{s.low_stock_items > 1 ? "s" : ""}</Link>}
+          {s.low_stock_items > 0 && <Link href="/products?low_stock=true" className="text-sm text-amber-700 underline underline-offset-2 hover:text-amber-900">{ctx.t('dashboard.lowStockAlert', { count: s.low_stock_items, defaultValue: `${s.low_stock_items} low-stock product(s)` })}</Link>}
         </div>
       ) : null
     },
@@ -341,10 +341,10 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
       return (
         <div className="bg-white rounded-xl border border-[#ede9e2] p-4 shadow-sm h-full flex flex-col">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#1a1814]/55">Monthly Revenue vs Expenses</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#1a1814]/55">{ctx.t('dashboard.monthlyRevExp', 'Monthly Revenue vs Expenses')}</p>
             <div className="flex items-center gap-3 text-[10px] font-medium text-[#1a1814]/50">
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-green-500 inline-block" />Revenue</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block" />Expenses</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-green-500 inline-block" />{ctx.t('dashboard.revenue', 'Revenue')}</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block" />{ctx.t('dashboard.expenses', 'Expenses')}</span>
             </div>
           </div>
           <div className="flex-1 min-h-0">
@@ -364,7 +364,7 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
       const { lineData, lineOpts } = ctx.chartConfigs
       return (
         <div className="bg-white rounded-xl border border-[#ede9e2] p-4 shadow-sm h-full flex flex-col">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#1a1814]/55 mb-3">Net Profit Trend</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#1a1814]/55 mb-3">{ctx.t('dashboard.netProfitTrend', 'Net Profit Trend')}</p>
           <div className="flex-1 min-h-0">
             {charts ? <Line data={lineData as ChartJsData<"line">} options={lineOpts} /> : <ChartSkeleton />}
           </div>
@@ -389,12 +389,12 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
       const { doughnutData, doughnutOpts } = ctx.chartConfigs
       return (
         <div className="bg-white rounded-xl border border-[#ede9e2] p-4 shadow-sm h-full flex flex-col">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#1a1814]/55 mb-3">Expense Breakdown (YTD)</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#1a1814]/55 mb-3">{ctx.t('dashboard.expenseBreakdownYtd', 'Expense Breakdown (YTD)')}</p>
           <div className="flex-1 min-h-0">
             {charts ? (
               charts.expense_breakdown.length > 0
                 ? <Doughnut data={doughnutData as ChartJsData<"doughnut">} options={doughnutOpts} />
-                : <div className="h-full flex items-center justify-center text-sm text-[#1a1814]/40">No expense data</div>
+                : <div className="h-full flex items-center justify-center text-sm text-[#1a1814]/40">{ctx.t('dashboard.noExpenseData', 'No expense data')}</div>
             ) : <ChartSkeleton />}
           </div>
         </div>
@@ -412,7 +412,7 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
       const { customerBarData, baseChartOpts } = ctx.chartConfigs
       return (
         <div className="bg-white rounded-xl border border-[#ede9e2] p-4 shadow-sm h-full flex flex-col">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#1a1814]/55 mb-3">Top Customers by Revenue</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#1a1814]/55 mb-3">{ctx.t('dashboard.topCustomersByRevenue', 'Top Customers by Revenue')}</p>
           <div className="flex-1 min-h-0">
             {charts ? (
               charts.top_customers.length > 0
@@ -426,7 +426,7 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
                       y: { grid: { display: false }, ticks: { font: { size: 10 } } },
                     },
                   } as ChartOptions<"bar">} />
-                : <div className="h-full flex items-center justify-center text-sm text-[#1a1814]/40">No invoice data</div>
+                : <div className="h-full flex items-center justify-center text-sm text-[#1a1814]/40">{ctx.t('dashboard.noInvoiceData', 'No invoice data')}</div>
             ) : <ChartSkeleton />}
           </div>
         </div>

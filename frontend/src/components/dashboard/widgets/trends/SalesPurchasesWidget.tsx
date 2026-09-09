@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { Bar } from "react-chartjs-2"
 import { useFmtCompact } from "@/context/SettingsContext"
 import { monthLabel } from "@/lib/dashboardTrends"
@@ -7,6 +8,7 @@ import { TrendShell, moneyBarOpts, useTrends } from "./common"
 
 /** Monthly invoiced sales vs billed purchases (document totals, void excluded). */
 export default function SalesPurchasesWidget() {
+  const { t } = useTranslation()
   const fmt = useFmtCompact()
   const { data, error } = useTrends()
 
@@ -17,16 +19,16 @@ export default function SalesPurchasesWidget() {
   const chartData = {
     labels: data?.months.map(monthLabel) ?? [],
     datasets: [
-      { label: "Sales", data: data?.sales_purchases.sales.map(Number) ?? [], backgroundColor: "rgba(22,163,74,0.75)", borderRadius: 4 },
-      { label: "Purchases", data: data?.sales_purchases.purchases.map(Number) ?? [], backgroundColor: "rgba(37,99,235,0.65)", borderRadius: 4 },
+      { label: t('dashboard.sales', 'Sales'), data: data?.sales_purchases.sales.map(Number) ?? [], backgroundColor: "rgba(22,163,74,0.75)", borderRadius: 4 },
+      { label: t('dashboard.purchases', 'Purchases'), data: data?.sales_purchases.purchases.map(Number) ?? [], backgroundColor: "rgba(37,99,235,0.65)", borderRadius: 4 },
     ],
   }
 
   return (
     <TrendShell
-      title="Sales vs Purchases" sub="Invoiced vs billed per month"
-      href="/invoices" linkLabel="Invoices"
-      loading={!data} error={error} empty={!hasActivity} emptyText="No invoices or bills yet."
+      title={t('widget.sales_purchases', 'Sales vs Purchases')} sub={t('dashboard.salesPurchasesSub', 'Invoiced vs billed per month')}
+      href="/invoices" linkLabel={t('nav.invoices', 'Invoices')}
+      loading={!data} error={error} empty={!hasActivity} emptyText={t('dashboard.noInvoicesBillsYet', 'No invoices or bills yet.')}
     >
       <Bar data={chartData} options={moneyBarOpts(fmt, true)} />
     </TrendShell>

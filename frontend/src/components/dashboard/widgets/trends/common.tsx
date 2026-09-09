@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
+import { useTranslation } from "react-i18next"
 import {
   Chart as ChartJS, BarController, LineController, DoughnutController,
   BarElement, LineElement, PointElement, ArcElement,
@@ -56,6 +57,7 @@ interface ShellProps {
 export function TrendShell({
   title, sub, href, linkLabel, loading, error, empty, emptyText, footer, children,
 }: ShellProps) {
+  const { t } = useTranslation()
   return (
     <div className="h-full flex flex-col bg-white border border-[var(--border)] rounded-xl p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2 mb-3">
@@ -65,17 +67,17 @@ export function TrendShell({
         </div>
         {href && (
           <Link href={href} className="text-[11px] text-[#b8943f] font-semibold hover:text-[#8a6d2e] flex-shrink-0">
-            {linkLabel ?? "View"} →
+            {linkLabel ?? t('common.view', 'View')} →
           </Link>
         )}
       </div>
       {error ? (
-        <div className="text-sm text-red-600">Failed to load.</div>
+        <div className="text-sm text-red-600">{t('common.failedToLoad', 'Failed to load.')}</div>
       ) : loading ? (
         <div className="shimmer flex-1 rounded-lg" />
       ) : empty ? (
         <div className="flex-1 flex items-center justify-center text-sm text-[var(--text-primary)]/40">
-          {emptyText ?? "No data yet."}
+          {emptyText ?? t('common.noDataYet', 'No data yet.')}
         </div>
       ) : (
         <>

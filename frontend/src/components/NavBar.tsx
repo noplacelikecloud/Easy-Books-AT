@@ -6,22 +6,24 @@ import { useRouter, usePathname } from 'next/navigation'
 import { ArrowLeft, Home, ChevronRight } from 'lucide-react'
 import { resolveBreadcrumb } from '@/lib/nav'
 import { useBreadcrumb } from '@/context/BreadcrumbContext'
+import { useTranslation } from 'react-i18next'
 
 export default function NavBar() {
   const router = useRouter()
   const pathname = usePathname()
   const leaf = useBreadcrumb()
   const { list, isSubPage } = resolveBreadcrumb(pathname)
+  const { t } = useTranslation()
 
   // Sub-pages only: top-level destinations and orphans render nothing.
   if (!isSubPage) return null
 
   // Build the trail: Dashboard › List › Leaf (each but the leaf is a link).
   const crumbs: { label: string; href?: string }[] = [
-    { label: 'Dashboard', href: '/dashboard' },
+    { label: t('nav.Dashboard', 'Dashboard'), href: '/dashboard' },
   ]
-  if (list && list.href !== '/dashboard') crumbs.push({ label: list.label, href: list.href })
-  if (leaf) crumbs.push({ label: leaf })
+  if (list && list.href !== '/dashboard') crumbs.push({ label: t(`nav.${list.label}`, list.label), href: list.href })
+  if (leaf) crumbs.push({ label: t(`nav.${leaf}`, leaf) })
 
   return (
     <nav
@@ -30,13 +32,13 @@ export default function NavBar() {
     >
       <button
         onClick={() => router.back()}
-        aria-label="Back"
-        title="Back"
+        aria-label={t('common.back', 'Back')}
+        title={t('common.back', 'Back')}
         className="inline-flex items-center justify-center w-7 h-7 shrink-0 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--primary-light)] transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
       </button>
-      <Link href="/dashboard" aria-label="Dashboard home" title="Dashboard" className="inline-flex items-center shrink-0 hover:text-[var(--primary)] transition-colors">
+      <Link href="/dashboard" aria-label={t('nav.Dashboard', 'Dashboard')} title={t('nav.Dashboard', 'Dashboard')} className="inline-flex items-center shrink-0 hover:text-[var(--primary)] transition-colors">
         <Home className="w-4 h-4" />
       </Link>
       {crumbs.map((c, i) => {

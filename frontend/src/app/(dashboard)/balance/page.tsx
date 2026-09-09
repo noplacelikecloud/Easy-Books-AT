@@ -42,6 +42,7 @@ function TreeSection({
   totalLabel: string
   fmt: (n: number) => string
 }) {
+  const { t } = useTranslation()
   return (
     <section className="space-y-2">
       <h3 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/75 border-b border-[var(--text-primary)]/5 pb-2">{title}</h3>
@@ -49,8 +50,8 @@ function TreeSection({
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/50">
-            <th className="py-2 pr-3 text-left font-bold">Account</th>
-            <th className="py-2 px-3 text-right font-bold">Balance</th>
+            <th className="py-2 pr-3 text-left font-bold">{t('col.account', 'Account')}</th>
+            <th className="py-2 px-3 text-right font-bold">{t('col.balance', 'Balance')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--text-primary)]/5">
@@ -206,19 +207,19 @@ export default function BalanceSheetPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <PrintHeader title="Balance Sheet" subtitle={`As of ${fmtDate(asOf)}`} />
+      <PrintHeader title={t('page.balanceSheet', 'Balance Sheet')} subtitle={`${t('reports.bsSubtitle', { date: fmtDate(asOf), defaultValue: `Financial position as of ${fmtDate(asOf)}` })}`} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8 print:hidden">
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-3xl font-bold text-[var(--text-primary)]">Balance Sheet</h1>
-          <p className="text-[var(--text-primary)]/60 text-sm sm:text-base">Financial position as of {fmtDate(asOf)}</p>
+          <h1 className="text-xl sm:text-3xl font-bold text-[var(--text-primary)]">{t('page.balanceSheet', 'Balance Sheet')}</h1>
+          <p className="text-[var(--text-primary)]/60 text-sm sm:text-base">{t('reports.bsSubtitle', { date: fmtDate(asOf), defaultValue: `Financial position as of ${fmtDate(asOf)}` })}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!compareMode && (
-            <button onClick={exportCsv} disabled={isLoading} className="p-3 bg-white border border-[var(--text-primary)]/10 rounded-xl hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60 disabled:opacity-40" title="Export CSV">
+            <button onClick={exportCsv} disabled={isLoading} className="p-3 bg-white border border-[var(--text-primary)]/10 rounded-xl hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60 disabled:opacity-40" title={t('common.exportCsv', 'Export CSV')}>
               <Download className="w-5 h-5" />
             </button>
           )}
-          <button onClick={() => window.print()} className="p-3 bg-white border border-[var(--text-primary)]/10 rounded-xl hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60" title="Print">
+          <button onClick={() => window.print()} className="p-3 bg-white border border-[var(--text-primary)]/10 rounded-xl hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60" title={t('common.print', 'Print')}>
             <Printer className="w-5 h-5" />
           </button>
         </div>
@@ -226,17 +227,17 @@ export default function BalanceSheetPage() {
 
       <div className="mb-6 p-4 bg-white border border-[var(--border)] rounded-xl space-y-3 print:hidden">
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">As of</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('reports.asOf', 'As of')}</span>
           <input type="date" value={asOf} onChange={e => setAsOf(e.target.value)}
                  className="px-3 py-1.5 text-sm border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" />
         </div>
         <label className="flex items-center gap-2 text-sm text-[var(--text-primary)]/70 cursor-pointer">
           <input type="checkbox" checked={compareMode} onChange={e => setCompareMode(e.target.checked)} className="rounded" />
-          Compare with prior period
+          {t('reports.comparePrior', 'Compare with prior period')}
         </label>
         {compareMode && (
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-[var(--text-primary)]/50">Prior period as of:</span>
+            <span className="text-[var(--text-primary)]/50">{t('reports.priorAsOf', 'Prior period as of:')}</span>
             <input type="date" value={cmpEnd} onChange={e => setCmpEnd(e.target.value)}
                    className="border border-[var(--border)] rounded px-2 py-1 text-sm" />
           </div>
@@ -244,45 +245,45 @@ export default function BalanceSheetPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-20 text-[var(--text-primary)]/75">Generating report...</div>
+        <div className="text-center py-20 text-[var(--text-primary)]/75">{t('common.generatingReport', 'Generating report...')}</div>
       ) : (
         <div className="bg-white rounded-3xl shadow-xl shadow-black/5 border border-[var(--text-primary)]/5 p-10 space-y-12">
           {compareMode ? (
             <>
               {comparison && (
                 <div className="flex justify-end gap-8 text-xs font-bold text-[var(--text-primary)]/50 uppercase tracking-widest">
-                  <span className="w-36 text-right">Current Period</span>
-                  <span className="w-36 text-right text-[var(--text-primary)]/30">Comparative Period</span>
+                  <span className="w-36 text-right">{t('reports.currentPeriod', 'Current Period')}</span>
+                  <span className="w-36 text-right text-[var(--text-primary)]/30">{t('reports.comparativePeriod', 'Comparative Period')}</span>
                 </div>
               )}
 
-              <BalanceSection title="Assets" items={flatAssets} cmpItems={cmpAssets}
-                total={flatTotalAssets} cmpTotal={cmpTotalAssets} totalLabel="Total Assets"
+              <BalanceSection title={t('reports.assets', 'Assets')} items={flatAssets} cmpItems={cmpAssets}
+                total={flatTotalAssets} cmpTotal={cmpTotalAssets} totalLabel={t('reports.totalAssets', 'Total Assets')}
                 fmt={fmt} showCmp={!!comparison} />
 
-              <BalanceSection title="Liabilities" items={flatLiabilities} cmpItems={cmpLiabilities}
-                total={flatTotalLiabilities} cmpTotal={cmpTotalLiabilities} totalLabel="Total Liabilities"
+              <BalanceSection title={t('reports.liabilities', 'Liabilities')} items={flatLiabilities} cmpItems={cmpLiabilities}
+                total={flatTotalLiabilities} cmpTotal={cmpTotalLiabilities} totalLabel={t('reports.totalLiabilities', 'Total Liabilities')}
                 fmt={fmt} showCmp={!!comparison} />
 
-              <BalanceSection title="Equity" items={flatEquity} cmpItems={cmpEquity}
-                total={flatTotalEquity} cmpTotal={cmpTotalEquity} totalLabel="Total Equity"
+              <BalanceSection title={t('reports.equity', 'Equity')} items={flatEquity} cmpItems={cmpEquity}
+                total={flatTotalEquity} cmpTotal={cmpTotalEquity} totalLabel={t('reports.totalEquity', 'Total Equity')}
                 fmt={fmt} showCmp={!!comparison} />
             </>
           ) : (
             <>
-              <TreeSection title="Assets" nodes={treeAssets}
-                total={bsTotals.assets} totalLabel="Total Assets" fmt={fmt} />
+              <TreeSection title={t('reports.assets', 'Assets')} nodes={treeAssets}
+                total={bsTotals.assets} totalLabel={t('reports.totalAssets', 'Total Assets')} fmt={fmt} />
 
-              <TreeSection title="Liabilities" nodes={treeLiabilities}
-                total={bsTotals.liabilities} totalLabel="Total Liabilities" fmt={fmt} />
+              <TreeSection title={t('reports.liabilities', 'Liabilities')} nodes={treeLiabilities}
+                total={bsTotals.liabilities} totalLabel={t('reports.totalLiabilities', 'Total Liabilities')} fmt={fmt} />
 
-              <TreeSection title="Equity" nodes={treeEquity}
-                total={bsTotals.equity} totalLabel="Total Equity" fmt={fmt} />
+              <TreeSection title={t('reports.equity', 'Equity')} nodes={treeEquity}
+                total={bsTotals.equity} totalLabel={t('reports.totalEquity', 'Total Equity')} fmt={fmt} />
             </>
           )}
 
           <section className="pt-8 border-t-2 border-[var(--text-primary)] flex justify-between items-center bg-[var(--bg-page)]/30 -mx-10 px-10 py-6">
-            <h2 className="text-xl font-bold text-[var(--text-primary)]">Total Liabilities &amp; Equity</h2>
+            <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('reports.totalLE', 'Total Liabilities & Equity')}</h2>
             <div className="flex gap-8">
               <div className="text-2xl font-bold w-36 text-right text-[var(--text-primary)]">{fmt(totalLE)}</div>
               {compareMode && comparison && (
@@ -294,7 +295,7 @@ export default function BalanceSheetPage() {
           {!isBalanced && (
             <div className="p-4 bg-orange-50 border border-orange-100 text-orange-700 rounded-xl text-xs flex items-center gap-3 italic">
               <HelpCircle className="w-4 h-4" />
-              Balance sheet is out by {fmt(Math.abs(totalAssets - totalLE))}. Check for missing entries or run year-end closing.
+              {t('reports.bsMismatchWarning', { diff: fmt(Math.abs(totalAssets - totalLE)), defaultValue: `Balance sheet is out by ${fmt(Math.abs(totalAssets - totalLE))}. Check for missing entries or run year-end closing.` })}
             </div>
           )}
         </div>

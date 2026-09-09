@@ -168,11 +168,11 @@ function InvoicesContent() {
 
   return (
     <div className="space-y-6">
-      <PrintHeader title="Invoices" orientation="landscape" />
+      <PrintHeader title={t('page.invoices', 'Invoices')} orientation="landscape" />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 print:hidden">
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold">Invoices</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Sales invoices to customers</p>
+          <h1 className="text-xl sm:text-3xl font-bold">{t('page.invoices', 'Invoices')}</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{t('invoices.subtitle', 'Sales invoices to customers')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -180,7 +180,7 @@ function InvoicesContent() {
             className="flex items-center gap-2 px-4 py-2 border border-[var(--border)] rounded-lg text-sm font-bold hover:bg-[var(--bg-page)] transition-colors"
           >
             <Download className="w-4 h-4" />
-            Export
+            {t('common.export', 'Export')}
           </button>
           <button
             onClick={() => window.print()}
@@ -189,22 +189,22 @@ function InvoicesContent() {
             <Printer className="w-4 h-4" />{t('common.print', 'Print')}</button>
           <button onClick={openCreate} disabled={!can("invoices", "edit")} className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-dark)] disabled:opacity-40 disabled:cursor-not-allowed">
             <Plus className="w-4 h-4" />
-            New Invoice
+            {t('invoices.newInvoice', 'New Invoice')}
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 print:grid-cols-3 gap-3 sm:gap-4">
         <div className="bg-white rounded-lg border border-[var(--border)] p-6">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Outstanding</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('hub.outstanding', 'Outstanding')}</p>
           <p className="text-2xl font-bold text-[var(--primary)] mt-2">{fmt(outstanding)}</p>
         </div>
         <div className="bg-white rounded-lg border border-[var(--border)] p-6">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Collected</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('hub.collected', 'Collected')}</p>
           <p className="text-2xl font-bold text-green-600 mt-2">{fmt(paid)}</p>
         </div>
         <div className="bg-white rounded-lg border border-[var(--border)] p-6">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Total Invoices</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('hub.totalInvoices', 'Total Invoices')}</p>
           <p className="text-2xl font-bold text-[var(--text-primary)] mt-2">{total}</p>
         </div>
       </div>
@@ -219,20 +219,20 @@ function InvoicesContent() {
         return (
           <div className="bg-[#1a1814] text-white rounded-xl px-6 py-4 flex flex-wrap items-center gap-6 print:hidden">
             <div>
-              <p className="text-xs text-white/50 uppercase tracking-widest font-bold">Today&apos;s Sales</p>
+              <p className="text-xs text-white/50 uppercase tracking-widest font-bold">{t('invoices.todaysSales', "Today's Sales")}</p>
               <p className="text-xl font-bold font-mono mt-0.5">{fmt(todaySales)}</p>
               <p className="text-[10px] text-white/40 mt-0.5">{todayInvoices.length} invoice{todayInvoices.length !== 1 ? "s" : ""}</p>
             </div>
             <div>
-              <p className="text-xs text-white/50 uppercase tracking-widest font-bold">PRA Submitted</p>
+              <p className="text-xs text-white/50 uppercase tracking-widest font-bold">{t('invoices.praSubmitted', 'PRA Submitted')}</p>
               <p className="text-xl font-bold text-emerald-400 mt-0.5">{submitted} ✓</p>
             </div>
             <div>
-              <p className="text-xs text-white/50 uppercase tracking-widest font-bold">Failed</p>
+              <p className="text-xs text-white/50 uppercase tracking-widest font-bold">{t('invoices.failed', 'Failed')}</p>
               <p className="text-xl font-bold text-red-400 mt-0.5">{failed.length} ✗</p>
             </div>
             <div>
-              <p className="text-xs text-white/50 uppercase tracking-widest font-bold">Pending</p>
+              <p className="text-xs text-white/50 uppercase tracking-widest font-bold">{t('invoices.pending', 'Pending')}</p>
               <p className="text-xl font-bold text-amber-400 mt-0.5">{pending} ⏳</p>
             </div>
             {failed.length > 0 && (
@@ -240,7 +240,7 @@ function InvoicesContent() {
                 href={`/invoices/${failed[0].id}`}
                 className="ml-auto text-xs text-red-300 border border-red-400/40 rounded-lg px-3 py-1.5 hover:bg-red-900/30 transition-colors"
               >
-                Fix Failed →
+                {t('invoices.fixFailed', 'Fix Failed →')}
               </Link>
             )}
           </div>
@@ -250,13 +250,13 @@ function InvoicesContent() {
       {customerFilter && (
         <div className="flex items-center gap-2 text-sm">
           <span className="bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 rounded-full px-3 py-1 font-medium">
-            Customer: {customerFilter.name}
+            {t('invoices.customerFilter', { name: customerFilter.name, defaultValue: `Customer: ${customerFilter.name}` })}
           </span>
           <button
             onClick={() => setCustomerFilter(null)}
             className="text-[var(--text-primary)]/40 hover:text-red-500 text-xs transition-colors"
           >
-            Clear filter
+            {t('invoices.clearFilter', 'Clear filter')}
           </button>
         </div>
       )}
@@ -266,7 +266,7 @@ function InvoicesContent() {
         statuses={INVOICE_STATUSES} status={status} onStatus={setStatus}
         dateFrom={dateFrom} dateTo={dateTo}
         onDateFrom={setDateFrom} onDateTo={setDateTo}
-        placeholder="Search by invoice # or customer…"
+        placeholder={t('invoices.searchPlaceholder', 'Search by invoice # or customer…')}
       />
 
       <div className="bg-white rounded-xl border border-[var(--border)] overflow-hidden">
@@ -281,12 +281,12 @@ function InvoicesContent() {
                     onChange={e => setSelectedIds(e.target.checked ? new Set(invoices.map(i => i.id)) : new Set())}
                   />
                 </th>
-                <SortableHeader label="Invoice #"  field="number"        sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                <SortableHeader label="Customer"   field="customer_name" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                <SortableHeader label="Issue Date" field="issue_date"    sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                <SortableHeader label="Due Date"   field="due_date"      sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                <SortableHeader label="Total"      field="total"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-right" />
-                <SortableHeader label="Status"     field="status"        sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-center" />
+                <SortableHeader label={t('col.invoice', 'Invoice #')}  field="number"        sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                <SortableHeader label={t('col.customer', 'Customer')}   field="customer_name" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                <SortableHeader label={t('col.issueDate', 'Issue Date')} field="issue_date"    sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                <SortableHeader label={t('col.dueDate', 'Due Date')}   field="due_date"      sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                <SortableHeader label={t('col.total', 'Total')}      field="total"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                <SortableHeader label={t('col.status', 'Status')}     field="status"        sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="text-center" />
                 {listDefs.map(def => (
                   <th key={def.key} className="px-4 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">
                     {def.label}
@@ -370,12 +370,12 @@ function InvoicesContent() {
                           onClick={() => router.push(`/invoices/${inv.id}/edit`)}
                           className="text-xs px-2 py-1 border border-[var(--primary)]/40 text-[var(--primary)] rounded hover:bg-[var(--bg-page)]"
                         >
-                          Edit
+                          {t('common.edit', 'Edit')}
                         </button>
                       )}
                       <Link
                         href={`/invoices/${inv.id}/print`}
-                        title="Print this invoice"
+                        title={t('common.print', 'Print')}
                         className="p-1.5 rounded border border-[var(--border)] hover:bg-[var(--bg-page)] text-[var(--text-primary)]/55 hover:text-[var(--primary)]"
                       >
                         <Printer className="w-3.5 h-3.5" />
@@ -391,9 +391,9 @@ function InvoicesContent() {
         {/* Mobile card list */}
         <div className="md:hidden print:hidden divide-y divide-[var(--border)]">
           {loading ? (
-            <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">Loading…</div>
+            <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">{t('common.loading', 'Loading…')}</div>
           ) : invoices.length === 0 ? (
-            <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">No invoices yet</div>
+            <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">{t('invoices.noInvoices', 'No invoices yet')}</div>
           ) : invoices.map(inv => (
             <Link
               key={inv.id}

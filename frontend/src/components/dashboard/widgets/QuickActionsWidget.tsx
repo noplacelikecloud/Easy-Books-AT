@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Pencil, Check, X } from "lucide-react"
 import { ALL_QUICK_ACTIONS } from "@/lib/dashboardWidgets"
 import { useModules } from "@/context/ModuleContext"
+import { useTranslation } from "react-i18next"
 
 interface Props {
   quickActions: string[]
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function QuickActionsWidget({ quickActions, updateQuickActions }: Props) {
+  const { t } = useTranslation()
   const { installedModules } = useModules()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<string[]>([])
@@ -39,26 +41,30 @@ export default function QuickActionsWidget({ quickActions, updateQuickActions }:
     setEditing(false)
   }
 
+  const getActionLabel = (id: string, label: string) => {
+    return t(`quickActions.${id}`, t(`nav.${label}`, label))
+  }
+
   if (editing) {
     return (
       <div className="bg-white border border-[var(--primary)]/40 rounded-xl shadow-sm px-3 py-2.5">
         <div className="flex items-center justify-between mb-2.5">
           <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/55">
-            Customize Quick Actions
+            {t('dashboard.customizeQuickActions', 'Customize Quick Actions')}
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setEditing(false)}
               className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs text-[var(--text-primary)]/50 hover:bg-[#faf8f4] transition-colors"
             >
-              <X className="w-3 h-3" /> Cancel
+              <X className="w-3 h-3" /> {t('common.cancel', 'Cancel')}
             </button>
             <button
               onClick={handleSave}
               disabled={saving || draft.length === 0}
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--primary)] text-white hover:bg-[#a07830] disabled:opacity-50 transition-colors"
             >
-              <Check className="w-3 h-3" /> {saving ? "Saving…" : "Done"}
+              <Check className="w-3 h-3" /> {saving ? t('common.saving', 'Saving…') : t('common.done', 'Done')}
             </button>
           </div>
         </div>
@@ -76,7 +82,7 @@ export default function QuickActionsWidget({ quickActions, updateQuickActions }:
                 }`}
               >
                 <action.icon className={`w-3.5 h-3.5 ${active ? action.color : "text-[var(--text-primary)]/30"}`} />
-                {action.label}
+                {getActionLabel(action.id, action.label)}
                 {active && <Check className="w-3 h-3 text-[var(--primary)]" />}
               </button>
             )
@@ -89,7 +95,7 @@ export default function QuickActionsWidget({ quickActions, updateQuickActions }:
   return (
     <div className="bg-white border border-[var(--border)] rounded-xl shadow-sm px-3 py-2 flex items-center gap-1 group">
       <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/45 mr-1 shrink-0">
-        Quick Actions
+        {t('common.quickActions', 'Quick Actions')}
       </span>
       <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
         {activeActions.map(action => (
@@ -99,13 +105,13 @@ export default function QuickActionsWidget({ quickActions, updateQuickActions }:
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-transparent hover:bg-[#faf8f4] hover:border-[var(--primary)]/30 transition-all"
           >
             <action.icon className={`w-4 h-4 ${action.color}`} />
-            <span className="text-sm font-medium text-[var(--text-primary)]/80">{action.label}</span>
+            <span className="text-sm font-medium text-[var(--text-primary)]/80">{getActionLabel(action.id, action.label)}</span>
           </Link>
         ))}
       </div>
       <button
         onClick={startEdit}
-        title="Customize quick actions"
+        title={t('dashboard.customizeQuickActions', 'Customize quick actions')}
         className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md text-[var(--text-primary)]/30 hover:text-[var(--primary)] hover:bg-[#faf8f4]"
       >
         <Pencil className="w-3.5 h-3.5" />

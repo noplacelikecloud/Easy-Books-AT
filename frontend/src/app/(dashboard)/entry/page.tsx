@@ -316,15 +316,16 @@ export default function NewEntryPage() {
   }
 
   // ── Shared header fields block ────────────────────────────────────────────
+  // ── Shared header fields block ────────────────────────────────────────────
   const SharedHeader = (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div>
-        <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">Date</label>
+        <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">{t('common.date', 'Date')}</label>
         <input type="date" value={date} onChange={e => setDate(e.target.value)} required
           className="w-full px-3 py-2.5 bg-[var(--bg-page)] border border-transparent rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:bg-white outline-none text-sm" />
       </div>
       <div>
-        <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">Description / Memo</label>
+        <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">{t('common.description', 'Description / Memo')}</label>
         <input type="text" value={description} onChange={e => setDescription(e.target.value)}
           placeholder="e.g. Monthly Rent Payment" required
           className="w-full px-3 py-2.5 bg-[var(--bg-page)] border border-transparent rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:bg-white outline-none text-sm" />
@@ -338,22 +339,22 @@ export default function NewEntryPage() {
       <DimensionPickers slots={analyticSlots} onChange={setAnalyticSlots} />
       {showAr && customers.length > 0 && (
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">{t('col.customer', 'Customer')}<span className="font-normal normal-case">(optional)</span>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">{t('col.customer', 'Customer')} <span className="font-normal normal-case">({t('common.optional', 'optional')})</span>
           </label>
           <select value={customerId} onChange={e => setCustomerId(e.target.value)}
             className="w-full px-3 py-2.5 bg-[var(--bg-page)] border border-transparent rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:bg-white outline-none text-sm">
-            <option value="">— none —</option>
+            <option value="">{t('common.noneOption', '— none —')}</option>
             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
       )}
       {showAp && vendors.length > 0 && (
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">{t('col.vendor', 'Vendor')}<span className="font-normal normal-case">(optional)</span>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">{t('col.vendor', 'Vendor')} <span className="font-normal normal-case">({t('common.optional', 'optional')})</span>
           </label>
           <select value={vendorId} onChange={e => setVendorId(e.target.value)}
             className="w-full px-3 py-2.5 bg-[var(--bg-page)] border border-transparent rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:bg-white outline-none text-sm">
-            <option value="">— none —</option>
+            <option value="">{t('common.noneOption', '— none —')}</option>
             {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
         </div>
@@ -365,20 +366,20 @@ export default function NewEntryPage() {
   const AllocationPanel = showAllocation && (
     <div>
       <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-2">
-        Allocate to Open {customerId ? "Invoices" : "Bills"}
-        <span className="font-normal normal-case ml-1">(optional)</span>
+        {t('entry.allocateToOpen', 'Allocate to Open')} {customerId ? t('invoices.title', 'Invoices') : t('bills.title', 'Bills')}
+        <span className="font-normal normal-case ml-1">({t('common.optional', 'optional')})</span>
       </label>
       {openDocs.length === 0 ? (
-        <p className="text-xs text-[var(--text-primary)]/40 italic">No outstanding {customerId ? "invoices" : "bills"} found.</p>
+        <p className="text-xs text-[var(--text-primary)]/40 italic">{t('entry.noOpenDocs', 'No outstanding invoices or bills found.')}</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
           <table className="w-full text-xs">
             <thead className="bg-[var(--bg-page)]">
               <tr>
-                <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{customerId ? "Invoice" : "Bill"}</th>
-                <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">Date</th>
-                <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">Balance Due</th>
-                <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">Allocate</th>
+                <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{customerId ? t('col.invoice', 'Invoice') : t('col.bill', 'Bill')}</th>
+                <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('common.date', 'Date')}</th>
+                <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('col.balanceDue', 'Balance Due')}</th>
+                <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">{t('col.allocate', 'Allocate')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
@@ -414,7 +415,7 @@ export default function NewEntryPage() {
               ? "bg-[var(--text-primary)] text-white shadow-sm"
               : "text-[var(--text-primary)]/50 hover:text-[var(--text-primary)]",
           )}>
-          {opt === "cash" ? "💵 Cash" : "🏦 Bank"}
+          {opt === "cash" ? `💵 ${t('entry.cash', 'Cash')}` : `🏦 ${t('entry.bank', 'Bank')}`}
         </button>
       ))}
     </div>
@@ -445,17 +446,17 @@ export default function NewEntryPage() {
       <header className="flex items-center gap-3 mb-5">
         <ScrollText className="w-6 h-6 text-[var(--primary)] shrink-0" />
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">New Entry</h1>
-          <p className="text-xs sm:text-sm text-[var(--text-primary)]/60">Record a manual double-entry transaction</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{t('entry.title', 'New Entry')}</h1>
+          <p className="text-xs sm:text-sm text-[var(--text-primary)]/60">{t('entry.subtitle', 'Record a manual double-entry transaction')}</p>
         </div>
       </header>
 
       {/* Mode tabs */}
       <div className="flex gap-2 mb-4">
         {([
-          { key: "journal", label: "Journal", Icon: BookOpen,        desc: "JV / Contra" },
-          { key: "payment", label: "Payment", Icon: ArrowUpFromLine, desc: "Cash / Bank payment" },
-          { key: "receipt", label: "Receipt", Icon: ArrowDownToLine, desc: "Cash / Bank receipt" },
+          { key: "journal", label: t('entry.journal', 'Journal'), Icon: BookOpen,        desc: t('entry.journalDesc', 'JV / Contra') },
+          { key: "payment", label: t('entry.payment', 'Payment'), Icon: ArrowUpFromLine, desc: t('entry.paymentDesc', 'Cash / Bank payment') },
+          { key: "receipt", label: t('entry.receipt', 'Receipt'), Icon: ArrowDownToLine, desc: t('entry.receiptDesc', 'Cash / Bank receipt') },
         ] as const).map(({ key, label, Icon, desc }) => (
           <button key={key} type="button" onClick={() => setMode(key)}
             className={cn(
@@ -478,20 +479,20 @@ export default function NewEntryPage() {
           {mode === "journal" && (<>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">Voucher Type</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">{t('entry.voucherType', 'Voucher Type')}</label>
                 <select value={jvType} onChange={e => setJvType(e.target.value)}
                   className="w-full px-3 py-2.5 bg-[var(--bg-page)] border border-transparent rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:bg-white outline-none text-sm">
-                  <option value="JV">Journal Voucher</option>
-                  <option value="CO">Contra</option>
+                  <option value="JV">{t('entry.journalVoucher', 'Journal Voucher')}</option>
+                  <option value="CO">{t('entry.contra', 'Contra')}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">Date</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">{t('common.date', 'Date')}</label>
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} required
                   className="w-full px-3 py-2.5 bg-[var(--bg-page)] border border-transparent rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:bg-white outline-none text-sm" />
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">Description / Memo</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">{t('common.description', 'Description / Memo')}</label>
                 <input type="text" value={description} onChange={e => setDescription(e.target.value)}
                   placeholder="e.g. Month-end accrual" required
                   className="w-full px-3 py-2.5 bg-[var(--bg-page)] border border-transparent rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:bg-white outline-none text-sm" />
@@ -506,9 +507,9 @@ export default function NewEntryPage() {
             {/* Line items table */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">Line Items</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('common.lineItems', 'Line Items')}</span>
                 {hasJvFilter && (
-                  <span className="text-[10px] text-[var(--primary)] font-semibold">Accounts filtered for {jvType}</span>
+                  <span className="text-[10px] text-[var(--primary)] font-semibold">{t('entry.accountsFiltered', 'Accounts filtered for')} {jvType}</span>
                 )}
               </div>
 
@@ -531,11 +532,11 @@ export default function NewEntryPage() {
                           <td className="px-3 py-2">
                             <select value={row.account_id} onChange={e => updateJvRow(idx, "account_id", e.target.value)} required
                               className="w-full px-2 py-2 bg-white border border-[var(--border)] rounded-md focus:ring-2 focus:ring-[var(--primary)] outline-none text-sm">
-                              <option value="">Select Account</option>
+                              <option value="">{t('common.selectAccount', 'Select Account')}</option>
                               {side === "none" && hasJvFilter ? (
                                 <>
-                                  {debitAccounts.length > 0 && <optgroup label="── Debit side ──">{debitAccounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}</optgroup>}
-                                  {creditAccounts.length > 0 && <optgroup label="── Credit side ──">{creditAccounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}</optgroup>}
+                                  {debitAccounts.length > 0 && <optgroup label="── Sollseite ──">{debitAccounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}</optgroup>}
+                                  {creditAccounts.length > 0 && <optgroup label="── Habenseite ──">{creditAccounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}</optgroup>}
                                 </>
                               ) : (
                                 (side === "debit" ? debitAccounts : side === "credit" ? creditAccounts : accounts).map(a =>
@@ -573,7 +574,7 @@ export default function NewEntryPage() {
                   return (
                     <div key={idx} className="border border-[var(--border)] rounded-lg p-3 bg-[#faf8f4]">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-primary)]/55">Line {idx + 1}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-primary)]/55">{t('common.lineItems', 'Line')} {idx + 1}</span>
                         <button type="button" onClick={() => removeJvRow(idx)} disabled={rows.length <= 2}
                           className="p-1 text-red-400 hover:text-red-600 disabled:opacity-30 transition-colors">
                           <Trash2 className="w-3.5 h-3.5" />
@@ -581,11 +582,11 @@ export default function NewEntryPage() {
                       </div>
                       <select value={row.account_id} onChange={e => updateJvRow(idx, "account_id", e.target.value)} required
                         className="w-full px-3 py-2 bg-white border border-[var(--border)] rounded-md focus:ring-2 focus:ring-[var(--primary)] outline-none text-sm mb-2">
-                        <option value="">Select Account</option>
+                        <option value="">{t('common.selectAccount', 'Select Account')}</option>
                         {side === "none" && hasJvFilter ? (
                           <>
-                            {debitAccounts.length > 0 && <optgroup label="── Debit side ──">{debitAccounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}</optgroup>}
-                            {creditAccounts.length > 0 && <optgroup label="── Credit side ──">{creditAccounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}</optgroup>}
+                            {debitAccounts.length > 0 && <optgroup label="── Sollseite ──">{debitAccounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}</optgroup>}
+                            {creditAccounts.length > 0 && <optgroup label="── Habenseite ──">{creditAccounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}</optgroup>}
                           </>
                         ) : (
                           (side === "debit" ? debitAccounts : side === "credit" ? creditAccounts : accounts).map(a =>
@@ -613,7 +614,7 @@ export default function NewEntryPage() {
 
               <button type="button" onClick={addJvRow}
                 className="mt-3 inline-flex items-center gap-1.5 text-[var(--primary)] text-sm font-bold hover:underline">
-                <Plus className="w-4 h-4" /> Add Line
+                <Plus className="w-4 h-4" /> {t('common.addLine', 'Add Line')}
               </button>
             </div>
 
@@ -629,7 +630,7 @@ export default function NewEntryPage() {
                   <div className="text-sm sm:text-base font-bold text-[var(--text-primary)]">{totalCredit.toFixed(dp)}</div>
                 </div>
                 <div className="border-l border-[var(--border)] pl-2 sm:pl-4">
-                  <div className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-0.5">Diff</div>
+                  <div className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-0.5">{t('entry.difference', 'Diff')}</div>
                   <div className={cn("text-sm sm:text-base font-bold", balanced ? "text-emerald-600" : "text-red-600")}>
                     {difference.toFixed(dp)}
                   </div>
@@ -644,7 +645,7 @@ export default function NewEntryPage() {
             <div className="flex items-center gap-4">
               {CashBankToggle(payCashBank, setPayCashBank)}
               <span className="text-xs text-[var(--text-primary)]/40">
-                Voucher type: <strong>{payCashBank === "cash" ? "CP" : "BP"}</strong>
+                {t('entry.voucherType', 'Voucher type')}: <strong>{payCashBank === "cash" ? "CP" : "BP"}</strong>
               </span>
             </div>
 
@@ -655,11 +656,11 @@ export default function NewEntryPage() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">
-                    Pay From — {payCashBank === "cash" ? "Cash Account" : "Bank Account"} (Cr)
+                    {t('entry.payFrom', 'Pay From')} — {payCashBank === "cash" ? t('entry.cashAccount', 'Cash Account') : t('entry.bankAccount', 'Bank Account')} (Cr)
                   </label>
                   <select value={payFromAccountId} onChange={e => setPayFromAccountId(e.target.value)} required
                     className="w-full px-3 py-2.5 bg-white border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none text-sm">
-                    <option value="">Select {payCashBank === "cash" ? "cash" : "bank"} account</option>
+                    <option value="">{t('entry.selectAccountPrompt', 'Select account')}</option>
                     {cashBankOptions(payCashBank).map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
                   </select>
                 </div>
@@ -671,7 +672,7 @@ export default function NewEntryPage() {
               {cashBankOptions(payCashBank).length === 0 && (
                 <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-xs">
                   <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  No {payCashBank} account found — add one in Chart of Accounts
+                  {t('entry.noAccountWarning', 'No account found — add one in Chart of Accounts')}
                 </div>
               )}
             </div>
@@ -682,14 +683,14 @@ export default function NewEntryPage() {
             {/* Dr: Items being paid */}
             <div className="pt-3 border-t border-[var(--border)]">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">Pay To (Dr)</span>
-                <span className="text-[10px] text-[var(--primary)]">Expenses · Assets · Liabilities</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('entry.payTo', 'Pay To')} (Dr)</span>
+                <span className="text-[10px] text-[var(--primary)]">{t('entry.expensesAssetsLiabilities', 'Expenses · Assets · Liabilities')}</span>
               </div>
               <div className="space-y-2">
                 {payToRows.map((row, idx) => (
                   <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:items-center">
                     <div className="flex-1 min-w-0">
-                      {GroupedSelect(payToGroups, row.account_id, v => updatePayRow(idx, "account_id", v), "Select account to pay")}
+                      {GroupedSelect(payToGroups, row.account_id, v => updatePayRow(idx, "account_id", v), t('entry.selectAccountPrompt', 'Select account'))}
                     </div>
                     <input type="number" step="0.01" inputMode="decimal" value={row.amount}
                       onChange={e => updatePayRow(idx, "amount", e.target.value)}
@@ -704,7 +705,7 @@ export default function NewEntryPage() {
               </div>
               <button type="button" onClick={addPayRow}
                 className="mt-2 inline-flex items-center gap-1.5 text-[var(--primary)] text-sm font-bold hover:underline">
-                <Plus className="w-4 h-4" /> Add Line
+                <Plus className="w-4 h-4" /> {t('common.addLine', 'Add Line')}
               </button>
             </div>
           </>)}
@@ -715,7 +716,7 @@ export default function NewEntryPage() {
             <div className="flex items-center gap-4">
               {CashBankToggle(recCashBank, setRecCashBank)}
               <span className="text-xs text-[var(--text-primary)]/40">
-                Voucher type: <strong>{recCashBank === "cash" ? "CR" : "BR"}</strong>
+                {t('entry.voucherType', 'Voucher type')}: <strong>{recCashBank === "cash" ? "CR" : "BR"}</strong>
               </span>
             </div>
 
@@ -726,11 +727,11 @@ export default function NewEntryPage() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">
-                    Received Into — {recCashBank === "cash" ? "Cash Account" : "Bank Account"} (Dr)
+                    {t('entry.receiveInto', 'Received Into')} — {recCashBank === "cash" ? t('entry.cashAccount', 'Cash Account') : t('entry.bankAccount', 'Bank Account')} (Dr)
                   </label>
                   <select value={recIntoAccountId} onChange={e => setRecIntoAccountId(e.target.value)} required
                     className="w-full px-3 py-2.5 bg-white border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none text-sm">
-                    <option value="">Select {recCashBank === "cash" ? "cash" : "bank"} account</option>
+                    <option value="">{t('entry.selectAccountPrompt', 'Select account')}</option>
                     {cashBankOptions(recCashBank).map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
                   </select>
                 </div>
@@ -742,7 +743,7 @@ export default function NewEntryPage() {
               {cashBankOptions(recCashBank).length === 0 && (
                 <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-xs">
                   <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  No {recCashBank} account found — add one in Chart of Accounts
+                  {t('entry.noAccountWarning', 'No account found — add one in Chart of Accounts')}
                 </div>
               )}
             </div>
@@ -753,14 +754,14 @@ export default function NewEntryPage() {
             {/* Cr: Source items */}
             <div className="pt-3 border-t border-[var(--border)]">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">Received From (Cr)</span>
-                <span className="text-[10px] text-[var(--primary)]">Revenue · Assets · Equity · Liabilities</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('entry.receiveFrom', 'Received From')} (Cr)</span>
+                <span className="text-[10px] text-[var(--primary)]">{t('entry.revenueAssetsEquity', 'Revenue · Assets · Equity · Liabilities')}</span>
               </div>
               <div className="space-y-2">
                 {recFromRows.map((row, idx) => (
                   <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:items-center">
                     <div className="flex-1 min-w-0">
-                      {GroupedSelect(recFromGroups, row.account_id, v => updateRecRow(idx, "account_id", v), "Select income / source account")}
+                      {GroupedSelect(recFromGroups, row.account_id, v => updateRecRow(idx, "account_id", v), t('entry.selectIncomeAccount', 'Select income / source account'))}
                     </div>
                     <input type="number" step="0.01" inputMode="decimal" value={row.amount}
                       onChange={e => updateRecRow(idx, "amount", e.target.value)}
@@ -775,7 +776,7 @@ export default function NewEntryPage() {
               </div>
               <button type="button" onClick={addRecRow}
                 className="mt-2 inline-flex items-center gap-1.5 text-[var(--primary)] text-sm font-bold hover:underline">
-                <Plus className="w-4 h-4" /> Add Line
+                <Plus className="w-4 h-4" /> {t('common.addLine', 'Add Line')}
               </button>
             </div>
           </>)}
@@ -797,7 +798,7 @@ export default function NewEntryPage() {
             disabled={isSubmitting || (mode === "journal" && !balanced)}
             className="px-5 py-2.5 bg-[var(--text-primary)] text-white rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-[var(--primary)] hover:text-black transition-all disabled:opacity-50 text-sm">
             <Save className="w-4 h-4" />
-            {isSubmitting ? "Saving…" : "Post Transaction"}
+            {isSubmitting ? t('entry.saving', 'Saving…') : t('entry.postTransaction', 'Post Transaction')}
           </button>
         </div>
       </form>

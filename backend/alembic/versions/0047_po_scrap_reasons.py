@@ -25,7 +25,7 @@ def upgrade() -> None:
             sa.Column("tenant_id", sa.Integer(), nullable=False, index=True),
             sa.Column("code", sa.String(), nullable=False),
             sa.Column("name", sa.String(), nullable=False),
-            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
         )
 
     if not bind.dialect.has_table(bind, "productionscrap"):
@@ -39,7 +39,7 @@ def upgrade() -> None:
             sa.Column("qty", sa.Numeric(18, 4), nullable=False),
             sa.Column("unit_cost", sa.Numeric(18, 4), nullable=False, server_default="0"),
             sa.Column("total_cost", sa.Numeric(18, 4), nullable=False, server_default="0"),
-            sa.Column("gl_posted", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+            sa.Column("gl_posted", sa.Boolean(), nullable=False, server_default=sa.false()),
             sa.Column("notes", sa.String(), nullable=True),
             sa.Column("created_at", sa.DateTime(), nullable=True),
             sa.Column("created_by_id", sa.Integer(), nullable=True),

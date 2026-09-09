@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { Bar } from "react-chartjs-2"
 import type { ChartOptions } from "chart.js"
 import { useFmtCompact } from "@/context/SettingsContext"
@@ -7,6 +8,7 @@ import { TrendShell, moneyBarOpts, useTrends } from "./common"
 
 /** Top vendors by billed spend — the AP mirror of Top Customers. */
 export default function TopVendorsWidget() {
+  const { t } = useTranslation()
   const fmt = useFmtCompact()
   const { data, error } = useTrends()
 
@@ -14,7 +16,7 @@ export default function TopVendorsWidget() {
   const chartData = {
     labels: rows.map(v => v.name.length > 14 ? v.name.slice(0, 12) + "…" : v.name),
     datasets: [{
-      label: "Billed Total",
+      label: t('dashboard.billedTotal', 'Billed Total'),
       data: rows.map(v => Number(v.total)),
       backgroundColor: "rgba(234,88,12,0.75)", borderRadius: 4,
     }],
@@ -26,9 +28,9 @@ export default function TopVendorsWidget() {
 
   return (
     <TrendShell
-      title="Top Vendors by Spend" sub="Billed totals, all time"
-      href="/vendors" linkLabel="Vendors"
-      loading={!data} error={error} empty={rows.length === 0} emptyText="No bill data."
+      title={t('widget.top_vendors', 'Top Vendors by Spend')} sub={t('dashboard.topVendorsSub', 'Billed totals, all time')}
+      href="/vendors" linkLabel={t('nav.vendors', 'Vendors')}
+      loading={!data} error={error} empty={rows.length === 0} emptyText={t('dashboard.noBillData', 'No bill data.')}
     >
       <Bar data={chartData} options={opts} />
     </TrendShell>

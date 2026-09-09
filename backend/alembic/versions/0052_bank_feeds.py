@@ -66,16 +66,15 @@ def upgrade() -> None:
         _add_col_if_missing("statementline", name, col)
 
     bind = op.get_bind()
+    insp = sa.inspect(bind)
     if bind.dialect.has_table(bind, "statementline"):
-        try:
+        existing_indexes = {idx["name"] for idx in insp.get_indexes("statementline")}
+        if "ix_statementline_match_status" not in existing_indexes:
             op.create_index("ix_statementline_match_status", "statementline", ["match_status"])
-        except Exception:
-            pass
     if bind.dialect.has_table(bind, "categorizationrule"):
-        try:
+        existing_indexes = {idx["name"] for idx in insp.get_indexes("categorizationrule")}
+        if "ix_categorizationrule_priority" not in existing_indexes:
             op.create_index("ix_categorizationrule_priority", "categorizationrule", ["priority"])
-        except Exception:
-            pass
 
 
 def downgrade() -> None:

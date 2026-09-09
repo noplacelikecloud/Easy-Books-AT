@@ -2,15 +2,10 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useTranslation } from "react-i18next"
 import { BookOpen } from "lucide-react"
 import { useFmt } from "@/context/SettingsContext"
 import { fetchDayBook, type DayBookData } from "@/lib/dashboardTrends"
-
-const VOUCHER_LABELS: Record<string, string> = {
-  JV: "Journal", SL: "Sales", PU: "Purchase",
-  CR: "Cash Receipt", CP: "Cash Payment", BR: "Bank Receipt", BP: "Bank Payment",
-  CN: "Credit Note", DN: "Debit Note", PR: "Payroll",
-}
 
 function dayRange(date: string) {
   return `date_from=${date}&date_to=${date}`
@@ -78,10 +73,24 @@ function Row({
  *  source documents, and the audit-trail category view (financial and
  *  non-financial activity alike). */
 export default function DayBookWidget() {
+  const { t } = useTranslation()
   const fmt = useFmt()
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0])
   const [book, setBook] = useState<DayBookData | null>(null)
   const [error, setError] = useState(false)
+
+  const voucherLabels: Record<string, string> = {
+    JV: t('reports.journal', 'Journal'),
+    SL: t('reports.salesVoucher', 'Sales'),
+    PU: t('reports.purchaseVoucher', 'Purchase'),
+    CR: t('reports.cashReceipt', 'Cash Receipt'),
+    CP: t('reports.cashPayment', 'Cash Payment'),
+    BR: t('reports.bankReceipt', 'Bank Receipt'),
+    BP: t('reports.bankPayment', 'Bank Payment'),
+    CN: t('reports.creditNote', 'Credit Note'),
+    DN: t('reports.debitNote', 'Debit Note'),
+    PR: t('reports.payroll', 'Payroll'),
+  }
 
   useEffect(() => {
     let alive = true
@@ -94,10 +103,10 @@ export default function DayBookWidget() {
   }, [date])
 
   const docs = book ? [
-    { key: "invoices", label: "Invoices issued", ...book.documents.invoices },
-    { key: "bills", label: "Bills recorded", ...book.documents.bills },
-    { key: "payments_received", label: "Payments received", ...book.documents.payments_received },
-    { key: "payments_made", label: "Payments made", ...book.documents.payments_made },
+    { key: "invoices", label: t('dashboard.invoicesIssued', 'Invoices issued'), ...book.documents.invoices },
+    { key: "bills", label: t('dashboard.billsRecorded', 'Bills recorded'), ...book.documents.bills },
+    { key: "payments_received", label: t('dashboard.paymentsReceived', 'Payments received'), ...book.documents.payments_received },
+    { key: "payments_made", label: t('dashboard.paymentsMade', 'Payments made'), ...book.documents.payments_made },
   ].filter(d => d.count > 0) : []
 
   const isEmpty = !!book && book.vouchers.length === 0 && docs.length === 0 && book.activity.length === 0
@@ -107,9 +116,9 @@ export default function DayBookWidget() {
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/55 flex items-center gap-1.5">
-            <BookOpen className="w-3.5 h-3.5 text-[#b8943f]" /> Day Book
+            <BookOpen className="w-3.5 h-3.5 text-[#b8943f]" /> {t('widget.day_book', 'Day Book')}
           </p>
-          <p className="text-[10px] text-[var(--text-primary)]/40 mt-0.5">All activity for the selected day</p>
+          <p className="text-[10px] text-[var(--text-primary)]/40 mt-0.5">{t('dashboard.dayBookSub', 'All activity for the selected day')}</p>
         </div>
         <input
           type="date" value={date} onChange={e => e.target.value && setDate(e.target.value)}
@@ -118,20 +127,20 @@ export default function DayBookWidget() {
       </div>
 
       {error ? (
-        <div className="text-sm text-red-600">Failed to load.</div>
+        <div className="text-sm text-red-600">{t('common.failedToLoad', 'Failed to load.')}</div>
       ) : !book ? (
         <div className="shimmer flex-1 rounded-lg" />
       ) : isEmpty ? (
-        <div className="flex-1 flex items-center justify-center text-sm text-[var(--text-primary)]/40">No activity on this day.</div>
+        <div className="flex-1 flex items-center justify-center text-sm text-[var(--text-primary)]/40">{t('dashboard.noActivityDay', 'No activity on this day.')}</div>
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto pr-1">
           {book.vouchers.length > 0 && (
             <>
-              <Heading>Vouchers</Heading>
+              <Heading>{t('common.vouchers', 'Vouchers')}</Heading>
               {book.vouchers.map(v => (
                 <Row
                   key={v.type}
-                  label={VOUCHER_LABELS[v.type] ?? v.type}
+                  label={voucherLabels[v.type] ?? v.type}
                   count={v.count}
                   amount={fmt(Number(v.total))}
                   href={voucherHref(date, v.type)}
@@ -141,7 +150,7 @@ export default function DayBookWidget() {
                 href={`/journal?start=${date}&end=${date}`}
                 className="group flex items-center justify-between gap-2 py-1 mt-0.5 hover:bg-[var(--bg-page)]/60 rounded-sm -mx-0.5 px-0.5"
               >
-                <span className="text-xs font-bold text-[#b8943f] group-hover:underline">Total</span>
+                <span className="text-xs font-bold text-[#b8943f] group-hover:underline">{t('common.total', 'Total')}</span>
                 <span className="flex items-center gap-2">
                   <span className="text-[10px] font-semibold bg-[var(--bg-page)] text-[var(--text-muted)] rounded-full px-1.5 py-0.5">{book.voucher_totals.count}</span>
                   <span className="text-xs font-bold text-[var(--text-primary)] tabular-nums">{fmt(Number(book.voucher_totals.total))}</span>
@@ -152,7 +161,7 @@ export default function DayBookWidget() {
 
           {docs.length > 0 && (
             <>
-              <Heading>Documents</Heading>
+              <Heading>{t('dashboard.documents', 'Documents')}</Heading>
               {docs.map(d => (
                 <Row
                   key={d.key}
@@ -167,7 +176,7 @@ export default function DayBookWidget() {
 
           {book.activity.length > 0 && (
             <>
-              <Heading>Activity by Category</Heading>
+              <Heading>{t('dashboard.activityByCategory', 'Activity by Category')}</Heading>
               <div className="flex flex-wrap gap-1.5">
                 {book.activity.map(a => (
                   <Link
@@ -180,7 +189,7 @@ export default function DayBookWidget() {
                 ))}
               </div>
               <Link href={`/audit?date_from=${date}&date_to=${date}`} className="inline-block text-[11px] text-[#b8943f] font-semibold hover:text-[#8a6d2e] mt-2">
-                Audit Log →
+                {t('nav.audit', 'Audit Log')} →
               </Link>
             </>
           )}

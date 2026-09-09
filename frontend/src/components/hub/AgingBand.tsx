@@ -24,32 +24,34 @@ export default function AgingBand(props: AgingBandProps) {
   if (total === 0)
     return (
       <div className="bg-white rounded-xl p-3 text-sm text-[var(--text-primary)]/40 text-center">
-        No outstanding items
+        {t("hub.noOutstanding", "No outstanding items")}
       </div>
     )
   return (
     <div className="bg-white rounded-xl p-3">
       <div className="text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/40 mb-2">
-        Aging Breakdown
+        {t("hub.agingBreakdown", "Aging Breakdown")}
       </div>
       <div className="flex gap-px h-2 rounded-full overflow-hidden mb-2">
-        {SEGMENTS.map(s =>
-          props[s.key] > 0 ? (
+        {SEGMENTS.map(s => {
+          const segLabel = s.key === "current" ? t("hub.current", "Current") : s.label
+          return props[s.key] > 0 ? (
             <div
               key={s.key}
               className={s.bg}
               style={{ flex: props[s.key] }}
-              title={`${s.label}: ${fmt(props[s.key])}`}
+              title={`${segLabel}: ${fmt(props[s.key])}`}
             />
           ) : null
-        )}
+        })}
       </div>
       <div className="flex flex-wrap gap-x-3 gap-y-0.5">
         {SEGMENTS.map(s => {
+          const segLabel = s.key === "current" ? t("hub.current", "Current") : s.label
           const pct = Math.round((props[s.key] / total) * 100)
           return pct > 0 ? (
             <span key={s.key} className="text-[9px]" style={{ color: s.fg }}>
-              ■ {s.label} {pct}%
+              ■ {segLabel} {pct}%
             </span>
           ) : null
         })}

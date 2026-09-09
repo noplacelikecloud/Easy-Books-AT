@@ -1,11 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useFmt } from "@/context/SettingsContext"
 import { apiFetch } from "@/lib/api"
 import { summarizeInventory, type InventoryPerfItem } from "@/lib/inventorySummary"
 
 export default function InventorySummaryWidget() {
+  const { t } = useTranslation()
   const fmt = useFmt()
   const [items, setItems] = useState<InventoryPerfItem[] | null>(null)
   const [error, setError] = useState(false)
@@ -16,20 +18,20 @@ export default function InventorySummaryWidget() {
       .catch(() => setError(true))
   }, [])
 
-  const t = items ? summarizeInventory(items) : null
+  const inv = items ? summarizeInventory(items) : null
 
   return (
     <div className="h-full flex flex-col bg-white border border-[var(--border)] rounded-xl p-4 shadow-sm">
-      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/55 mb-3">Inventory Summary</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/55 mb-3">{t('widget.inventory_summary', 'Inventory Summary')}</p>
       {error ? (
-        <div className="text-sm text-red-600">Failed to load.</div>
-      ) : !t ? (
+        <div className="text-sm text-red-600">{t('common.failedToLoad', 'Failed to load.')}</div>
+      ) : !inv ? (
         <div className="shimmer h-16 rounded-lg" />
       ) : (
         <div className="flex-1 grid grid-cols-3 gap-2 items-center">
-          <Figure label="Stock Value" value={fmt(t.totalValue)} />
-          <Figure label="Stock Items" value={String(t.itemCount)} />
-          <Figure label="Low Stock" value={String(t.lowStock)} warn={t.lowStock > 0} />
+          <Figure label={t('dashboard.stockValue', 'Stock Value')} value={fmt(inv.totalValue)} />
+          <Figure label={t('dashboard.stockItems', 'Stock Items')} value={String(inv.itemCount)} />
+          <Figure label={t('dashboard.lowStockItems', 'Low Stock')} value={String(inv.lowStock)} warn={inv.lowStock > 0} />
         </div>
       )}
     </div>

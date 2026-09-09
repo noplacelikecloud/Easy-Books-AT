@@ -126,8 +126,8 @@ export default function CashBookPage() {
   return (
     <div>
       <PrintHeader
-        title={selectedAccount ? `Cash Book — ${selectedAccount.name}` : "Cash Book"}
-        subtitle={`Period: ${start} — ${end}`}
+        title={selectedAccount ? `${t('page.cashBook', 'Cash Book')} — ${selectedAccount.name}` : t('page.cashBook', 'Cash Book')}
+        subtitle={`${t('common.period', 'Period')}: ${start} — ${end}`}
       />
 
       {/* Page title */}
@@ -135,9 +135,9 @@ export default function CashBookPage() {
         <div className="flex items-center gap-3">
           <Wallet className="w-5 h-5 text-[var(--primary)]" />
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">Cash Book</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{t('page.cashBook', 'Cash Book')}</h1>
             <p className="text-xs text-[var(--text-primary)]/55">
-              Voucher-aware ledger view of cash account transactions
+              {t('reports.cashBookSub', 'Voucher-aware ledger view of cash account transactions')}
             </p>
           </div>
         </div>
@@ -152,7 +152,7 @@ export default function CashBookPage() {
             }}
             disabled={!ledgerData}
             className="p-2.5 bg-white border border-[var(--border)] rounded-lg hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60 disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Export CSV"
+            title={t('common.exportCsv', 'Export CSV')}
           >
             <Download className="w-4 h-4" />
           </button>
@@ -160,7 +160,7 @@ export default function CashBookPage() {
             onClick={() => window.print()}
             disabled={!ledgerData}
             className="p-2.5 bg-white border border-[var(--border)] rounded-lg hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60 disabled:opacity-30 disabled:cursor-not-allowed"
-            title={!ledgerData ? "No data to print" : "Print Cash Book"}
+            title={!ledgerData ? t('common.noDataYet', 'No data to print') : t('common.print', 'Print Cash Book')}
           >
             <Printer className="w-4 h-4" />
           </button>
@@ -174,7 +174,7 @@ export default function CashBookPage() {
         {cashAccounts.length > 1 && (
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">
-              Cash Account
+              {t('common.cashAccount', 'Cash Account')}
             </label>
             <select
               value={selectedCode}
@@ -197,14 +197,14 @@ export default function CashBookPage() {
         {ledgerData && ledgerData.entries.length > 0 && (
           <div className="flex items-center gap-3">
             <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 whitespace-nowrap">
-              Voucher Type
+              {t('common.voucherType', 'Voucher Type')}
             </label>
             <select
               value={voucherFilter}
               onChange={e => setVoucherFilter(e.target.value)}
               className="px-3 py-1.5 border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[var(--primary)] bg-white"
             >
-              <option value="">All vouchers</option>
+              <option value="">{t('common.allTypes', 'All vouchers')}</option>
               {Object.entries(VOUCHER_TYPES).map(([code, label]) => (
                 <option key={code} value={code}>{code} — {label}</option>
               ))}
@@ -236,7 +236,7 @@ export default function CashBookPage() {
       {!initLoading && !loadError && cashAccounts.length === 0 && (
         <div className="bg-white border border-[var(--border)] rounded-xl py-20 text-center">
           <Wallet className="w-10 h-10 text-[var(--primary)]/40 mx-auto mb-3" />
-          <p className="text-sm font-medium text-[var(--text-primary)]/50">No cash account found</p>
+          <p className="text-sm font-medium text-[var(--text-primary)]/50">{t('reports.noCashAccount', 'No cash account found')}</p>
           <p className="text-xs text-[var(--text-primary)]/35 mt-1">
             Cash accounts are Asset GL accounts with codes starting with &ldquo;10&rdquo; that are not
             linked to a bank account. Add one via Chart of Accounts.
@@ -258,9 +258,7 @@ export default function CashBookPage() {
       {!initLoading && !loadError && cashAccounts.length > 0 && !isLoading && !ledgerData && (
         <div className="bg-white border border-[var(--border)] rounded-xl py-12 text-center">
           <p className="text-sm text-[var(--text-primary)]/50">
-            No transactions for{" "}
-            <span className="font-mono text-[var(--primary)]">{selectedCode}</span>{" "}
-            in the selected period.
+            {t('reports.noTxForAccount', { code: selectedCode, defaultValue: `No transactions for ${selectedCode} in the selected period.` })}
           </p>
         </div>
       )}

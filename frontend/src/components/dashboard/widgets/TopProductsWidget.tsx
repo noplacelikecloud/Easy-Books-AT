@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { apiFetch } from "@/lib/api"
 import { useFmtCompact } from "@/context/SettingsContext"
 import type { InventoryPerfItem } from "@/lib/inventorySummary"
@@ -15,10 +16,10 @@ interface CategoryRow {
   margin_pct: number | null
 }
 
-function buildCategoryRows(items: InventoryPerfItem[]): CategoryRow[] {
+function buildCategoryRows(items: InventoryPerfItem[], uncategorizedLabel: string): CategoryRow[] {
   const acc: Record<string, { units: number; revenue: number; cost: number }> = {}
   for (const item of items) {
-    const key = item.category_name || "Uncategorized"
+    const key = item.category_name || uncategorizedLabel
     if (!acc[key]) acc[key] = { units: 0, revenue: 0, cost: 0 }
     acc[key].units += Number(item.units_sold)
     acc[key].revenue += Number(item.sales_value ?? 0)
@@ -32,18 +33,19 @@ function buildCategoryRows(items: InventoryPerfItem[]): CategoryRow[] {
   }))
 }
 
-const METRIC_LABELS: Record<Metric, string> = {
-  units: "Units sold",
-  revenue: "Sales value",
-  margin: "Profitability",
-}
-
 export default function TopProductsWidget() {
+  const { t } = useTranslation()
   const fmt = useFmtCompact()
   const [items, setItems] = useState<InventoryPerfItem[] | null>(null)
   const [error, setError] = useState(false)
   const [metric, setMetric] = useState<Metric>("revenue")
   const [view, setView] = useState<ViewMode>("product")
+
+  const metricLabels: Record<Metric, string> = {
+    units: t('dashboard.unitsSold', 'Units sold'),
+    revenue: t('dashboard.salesValue', 'Sales value'),
+    margin: t('dashboard.profitability', 'Profitability'),
+  }
 
   useEffect(() => {
     apiFetch<{ items: InventoryPerfItem[] }>("/api/reports/inventory-performance")
@@ -51,12 +53,12 @@ export default function TopProductsWidget() {
       .catch(() => setError(true))
   }, [])
 
-  const subtitle = `by ${METRIC_LABELS[metric].toLowerCase()}`
+  const subtitle = t('dashboard.byMetric', { metric: metricLabels[metric].toLowerCase(), defaultValue: `by ${metricLabels[metric].toLowerCase()}` })
 
   const rows = (() => {
     if (!items) return []
     if (view === "category") {
-      const cats = buildCategoryRows(items)
+      const cats = buildCategoryRows(items, t('common.uncategorized', 'Uncategorized'))
       const sorted = [...cats].sort((a, b) => {
         if (metric === "units") return b.units - a.units
         if (metric === "revenue") return b.revenue - a.revenue
@@ -82,7 +84,7 @@ export default function TopProductsWidget() {
 
   const formatValue = (v: number | null | undefined) => {
     if (v == null) return "—"
-    if (metric === "units") return Math.round(Number(v)).toLocaleString("en-PK")
+    if (metric === "units") return Math.round(Number(v)).toLocaleString()
     if (metric === "revenue") return fmt(Number(v))
     return `${v}%`
   }
@@ -96,14 +98,14 @@ export default function TopProductsWidget() {
       {/* Header row */}
       <div className="flex items-start justify-between gap-2 mb-1">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/55">Top Products</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/55">{t('widget.top_products', 'Top Products')}</p>
           <p className="text-[10px] text-[var(--text-primary)]/40 mt-0.5">{subtitle}</p>
         </div>
         {/* Metric buttons */}
         <div className="flex gap-1 flex-shrink-0">
           {(["units", "revenue", "margin"] as Metric[]).map(m => (
             <button key={m} onClick={() => setMetric(m)} className={`${btnBase} ${metric === m ? btnActive : btnInactive}`}>
-              {m === "units" ? "Units" : m === "revenue" ? "Value" : "Margin"}
+              {m === "units" ? t('dashboard.units', 'Units') : m === "revenue" ? t('dashboard.value', 'Value') : t('dashboard.margin', 'Margin')}
             </button>
           ))}
         </div>
@@ -118,17 +120,17 @@ export default function TopProductsWidget() {
                 ? "bg-[var(--primary-light)] border-[var(--primary)] text-[var(--primary)]"
                 : "border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}>
-            {v === "product" ? "By product" : "By category"}
+            {v === "product" ? t('dashboard.byProduct', 'By product') : t('dashboard.byCategory', 'By category')}
           </button>
         ))}
       </div>
 
       {error ? (
-        <div className="text-sm text-red-600">Failed to load.</div>
+        <div className="text-sm text-red-600">{t('common.failedToLoad', 'Failed to load.')}</div>
       ) : !items ? (
         <div className="shimmer h-20 rounded-lg" />
       ) : rows.length === 0 ? (
-        <div className="text-sm text-[var(--text-primary)]/40">No data yet.</div>
+        <div className="text-sm text-[var(--text-primary)]/40">{t('dashboard.noProductSales', 'No data yet.')}</div>
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
           {rows.map((row, i) => (

@@ -90,9 +90,9 @@ export default function Customers() {
 
   const handleDelete = async (c: Customer) => {
     const ok = await confirm({
-      title: `Delete customer "${c.name}"?`,
-      message: "This cannot be undone.",
-      confirmLabel: "Delete",
+      title: t('customers.deleteConfirmTitle', `Delete customer "${c.name}"?`, { name: c.name }),
+      message: t('common.cannotUndo', "This cannot be undone."),
+      confirmLabel: t('common.delete', "Delete"),
       danger: true,
     })
     if (!ok) return
@@ -110,11 +110,11 @@ export default function Customers() {
 
   return (
     <div className="space-y-6">
-      <PrintHeader title="Customers" />
+      <PrintHeader title={t('page.customers', 'Customers')} />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 print:hidden">
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold">Customers</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Manage customers and track credit accounts</p>
+          <h1 className="text-xl sm:text-3xl font-bold">{t('page.customers', 'Customers')}</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{t('customers.subtitle', 'Manage customers and track credit accounts')}</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <CsvImportButton entity="customers" onSuccess={load} />
@@ -123,28 +123,28 @@ export default function Customers() {
             className="flex items-center gap-2 px-4 py-2 border border-[var(--border)] rounded-lg text-sm font-bold hover:bg-[var(--bg-page)] transition-colors"
           >
             <Download className="w-4 h-4" />
-            Export
+            {t('common.export', 'Export')}
           </button>
           <button
             onClick={() => window.print()}
             className="flex items-center gap-2 px-4 py-2 border border-[var(--border)] rounded-lg text-sm font-bold hover:bg-[var(--bg-page)] transition-colors"
-            title="Print"
+            title={t('common.print', 'Print')}
           >
             <Printer className="w-4 h-4" />{t('common.print', 'Print')}</button>
           <button onClick={openAdd} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-dark)]">
             <Plus className="w-4 h-4" />
-            Add Customer
+            {t('customers.addCustomer', 'Add Customer')}
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white rounded-lg border border-[var(--border)] p-6">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Total Customers</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('customers.totalCustomers', 'Total Customers')}</p>
           <p className="text-2xl font-bold text-[var(--primary)] mt-2">{total}</p>
         </div>
         <div className="bg-white rounded-lg border border-[var(--border)] p-6">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Closing Balance Total</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('customers.closingBalanceTotal', 'Closing Balance Total')}</p>
           <p className="text-2xl font-bold text-[var(--text-primary)] mt-2">{fmt(closingTotal)}</p>
         </div>
       </div>
@@ -153,7 +153,7 @@ export default function Customers() {
         <Search className="absolute left-3 top-3 w-4 h-4 text-[var(--text-muted)]" />
         <input
           type="text"
-          placeholder="Search customers..."
+          placeholder={t('customers.searchPlaceholder', 'Search customers...')}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
@@ -172,10 +172,10 @@ export default function Customers() {
                   onChange={e => setSelectedIds(e.target.checked ? new Set(customers.map(c => c.id)) : new Set())}
                 />
               </th>
-              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Name</th>
-              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Email</th>
-              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Phone</th>
-              <th className="ui-th text-right text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Closing Bal.</th>
+              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.name', 'Name')}</th>
+              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.email', 'Email')}</th>
+              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.phone', 'Phone')}</th>
+              <th className="ui-th text-right text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.closingBal', 'Closing Bal.')}</th>
               <th className="ui-th text-center text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.status', 'Status')}</th>
               <th className="ui-th"></th>
             </tr>
@@ -188,9 +188,9 @@ export default function Customers() {
                 <td colSpan={7} className="px-6 py-16 text-center">
                   <div className="inline-flex flex-col items-center gap-3">
                     <Users className="w-10 h-10 text-[var(--border)]" />
-                    <p className="text-sm text-[var(--text-muted)] font-medium">No customers yet</p>
+                    <p className="text-sm text-[var(--text-muted)] font-medium">{t('customers.noCustomers', 'No customers yet')}</p>
                     <button onClick={openAdd} className="px-4 py-2 bg-[var(--primary)] text-white text-sm font-medium rounded-lg hover:bg-[var(--primary-dark)] transition-colors">
-                      + Add Customer
+                      + {t('customers.addCustomer', 'Add Customer')}
                     </button>
                   </div>
                 </td>
@@ -220,8 +220,8 @@ export default function Customers() {
                   </span>
                 </td>
                 <td className="ui-td flex items-center gap-3">
-                  <Link href={`/customers/${c.id}`} className="text-[var(--primary)] text-sm font-bold hover:underline">View</Link>
-                  <button onClick={() => router.push(`/customers/${c.id}/edit`)} className="text-[var(--primary)] text-sm font-bold hover:underline">Edit</button>
+                  <Link href={`/customers/${c.id}`} className="text-[var(--primary)] text-sm font-bold hover:underline">{t('common.view', 'View')}</Link>
+                  <button onClick={() => router.push(`/customers/${c.id}/edit`)} className="text-[var(--primary)] text-sm font-bold hover:underline">{t('common.edit', 'Edit')}</button>
                   <button onClick={() => handleDelete(c)} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                 </td>
               </tr>
@@ -233,9 +233,9 @@ export default function Customers() {
         {/* Mobile card list */}
         <div className="md:hidden divide-y divide-[var(--border)]">
           {isLoading ? (
-            <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">Loading…</div>
+            <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">{t('common.loading', 'Loading…')}</div>
           ) : customers.length === 0 ? (
-            <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">No customers yet</div>
+            <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">{t('customers.noCustomers', 'No customers yet')}</div>
           ) : customers.map(c => (
             <Link
               key={c.id}

@@ -18,7 +18,7 @@ const registryById = new Map<string, WidgetDef>(WIDGET_REGISTRY.map(w => [w.id, 
 
 function renderItem(item: GridItem, ctx: WidgetContext, meta: { model: string | undefined; role: string }, editing: boolean): React.ReactNode {
   if (isShortcutId(item.id)) {
-    const metric = resolveTileMetric(shortcutHref(item.id), ctx.s, ctx.fmt)
+    const metric = resolveTileMetric(shortcutHref(item.id), ctx.s, ctx.fmt, ctx.t)
     return <ShortcutTile id={item.id} model={meta.model} role={meta.role} editing={editing} metric={metric ?? undefined} />
   }
   const def = registryById.get(item.id)
@@ -67,23 +67,23 @@ export default function DashboardGrid({ layout, ctx, editing, onExitEditing }: {
       {editing && (
         <div className="flex flex-wrap items-center gap-2 bg-[var(--bg-page)] border border-[var(--primary)]/30 rounded-xl px-3 py-2 sticky top-2 z-20">
           <span className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/55">
-            Customizing {layout.view === "operations" ? "Operations" : "Financial"} dashboard
+            {t('dashboard.customizing', 'Customizing')} {layout.view === "operations" ? t('dashboard.operationsDashboard', 'Operations') : t('dashboard.financialDashboard', 'Financial')}
           </span>
           <span className="text-[11px] text-[var(--primary)]/70 font-semibold">
-            {activeBp === "lg" ? "Desktop layout" : activeBp === "sm" ? "Tablet layout" : "Phone layout"}
+            {activeBp === "lg" ? t('dashboard.desktopLayout', 'Desktop layout') : activeBp === "sm" ? t('dashboard.tabletLayout', 'Tablet layout') : t('dashboard.phoneLayout', 'Phone layout')}
           </span>
-          <span className="text-[11px] text-[var(--text-primary)]/45">Drag to move · drag a corner to resize · × to remove</span>
+          <span className="text-[11px] text-[var(--text-primary)]/45">{t('dashboard.gridInstructions', 'Drag to move · drag a corner to resize · × to remove')}</span>
           <div className="ml-auto flex items-center gap-2">
             <button onClick={() => setAdding(a => !a)} className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--primary)] hover:text-[#a07f33] px-2 py-1">
-              <Plus className="w-3.5 h-3.5" /> Add widget
+              <Plus className="w-3.5 h-3.5" /> {t('dashboard.addWidget', 'Add widget')}
             </button>
             <button onClick={reset} title="Resets layout for all screen sizes" className="inline-flex items-center gap-1 text-xs text-[var(--text-primary)]/60 hover:text-[var(--text-primary)] px-2 py-1">
-              <RotateCcw className="w-3.5 h-3.5" /> Reset all
+              <RotateCcw className="w-3.5 h-3.5" /> {t('dashboard.resetAll', 'Reset all')}
             </button>
             <button onClick={() => { reload(); onExitEditing() }} className="inline-flex items-center gap-1 text-xs text-[var(--text-primary)]/60 hover:text-[var(--text-primary)] px-2 py-1">
               <X className="w-3.5 h-3.5" />{t('common.cancel', 'Cancel')}</button>
             <button onClick={handleDone} disabled={saving} className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-[var(--primary)] hover:bg-[#a07f33] rounded-lg px-3 py-1.5 disabled:opacity-60">
-              <Check className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Done"}
+              <Check className="w-3.5 h-3.5" /> {saving ? t('common.saving', 'Saving…') : t('common.done', 'Done')}
             </button>
           </div>
         </div>

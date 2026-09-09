@@ -3,6 +3,8 @@ import Link from "next/link"
 import { useFmt } from "@/context/SettingsContext"
 import { fmtDate } from "@/lib/utils"
 
+import { useTranslation } from "react-i18next"
+
 export interface PayrollRunRow {
   id: number
   jv_number: string | null
@@ -26,15 +28,18 @@ const STATUS_COLOR: Record<string, string> = {
 }
 
 export default function PayrollBand({ runs }: PayrollBandProps) {
+  const { t } = useTranslation()
   const fmt = useFmt()
 
   return (
     <div className="bg-white rounded-xl p-3">
       <div className="text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/40 mb-2">
-        Recent Payroll Runs
+        {t("hub.recentPayrollRuns", "Recent Payroll Runs")}
       </div>
       {runs.length === 0 ? (
-        <p className="text-xs text-[var(--text-primary)]/40 py-2 text-center">No payroll runs yet</p>
+        <p className="text-xs text-[var(--text-primary)]/40 py-2 text-center">
+          {t("hub.noPayrollRuns", "No payroll runs yet")}
+        </p>
       ) : (
         <div className="flex flex-col gap-1.5">
           {runs.map(run => (
@@ -49,17 +54,17 @@ export default function PayrollBand({ runs }: PayrollBandProps) {
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <span className={`text-[10px] font-medium capitalize ${STATUS_COLOR[run.status] ?? ""}`}>
-                  {run.status}
+                  {t(`status.${run.status}`, run.status)}
                 </span>
                 <span className="text-xs font-bold text-[var(--text-primary)]">{fmt(run.total_net_pay)}</span>
                 <Link href={`/payroll/${run.id}`} className="text-[10px] text-[var(--primary)] hover:underline">
-                  View
+                  {t("common.view", "View")}
                 </Link>
               </div>
             </div>
           ))}
           <Link href="/payroll" className="text-[10px] text-[var(--primary)] hover:underline text-right mt-0.5">
-            All runs →
+            {t("hub.allRuns", "All runs →")}
           </Link>
         </div>
       )}

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { SUB_NAV, getActiveSection, navVisible, navItemActive } from "@/lib/nav"
 import { useModules } from "@/context/ModuleContext"
 import { getCurrentUser } from "@/lib/auth"
+import { useTranslation } from "react-i18next"
 
 const PINNED_KEY  = "eb.subnav.pinned"
 const COLLAPSED_W = 52
@@ -16,6 +17,7 @@ const EXPANDED_W  = 200
 export default function SubNav() {
   const pathname             = usePathname()
   const { installedModules } = useModules()
+  const { t }                = useTranslation()
 
   const [isAdmin, setIsAdmin] = useState(false)
   const [pinned,  setPinned]  = useState(false)
@@ -64,20 +66,21 @@ export default function SubNav() {
             transform: expanded ? "translateX(0)" : "translateX(-6px)",
             transition: "opacity 140ms ease-in-out, transform 140ms ease-in-out",
           }}>
-          {activeSection}
+          {t(`section.${activeSection}`, t(`nav.${activeSection}`, activeSection))}
         </p>
       </div>
 
       {/* Nav items */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden pb-2">
         {items.map(item => {
-          const active = navItemActive(pathname, item.href)
-          const Icon   = item.icon
+          const active    = navItemActive(pathname, item.href)
+          const Icon      = item.icon
+          const itemLabel = t(`nav.${item.label}`, item.label)
           return (
             <Link
               key={item.href}
               href={item.href}
-              title={!expanded ? item.label : undefined}
+              title={!expanded ? itemLabel : undefined}
               className={cn(
                 "flex items-center text-[13px] transition-colors duration-150 border-l-[3px] py-[9px]",
                 expanded ? "gap-2.5 pl-[13px] pr-4" : "justify-center px-0",
@@ -100,7 +103,7 @@ export default function SubNav() {
                   overflow:   "hidden",
                   display:    "inline-block",
                 }}>
-                {item.label}
+                {itemLabel}
               </span>
             </Link>
           )

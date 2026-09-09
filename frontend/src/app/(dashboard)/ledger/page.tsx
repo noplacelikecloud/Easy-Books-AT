@@ -120,21 +120,21 @@ function SubledgerRows({ control, start, end, fmt, onLoaded, cached }: ExpandedR
   if (loading) {
     return (
       <tr>
-        <td colSpan={6} className="ui-td pl-10 text-xs text-[var(--text-primary)]/40 italic">Loading…</td>
+        <td colSpan={6} className="ui-td pl-10 text-xs text-[var(--text-primary)]/40 italic">{t('common.loading', 'Loading…')}</td>
       </tr>
     )
   }
   if (error || !data) {
     return (
       <tr>
-        <td colSpan={6} className="ui-td pl-10 text-xs text-red-500">{error ?? "No data"}</td>
+        <td colSpan={6} className="ui-td pl-10 text-xs text-red-500">{error ?? t('reports.noData', 'No data')}</td>
       </tr>
     )
   }
   if (data.items.length === 0) {
     return (
       <tr>
-        <td colSpan={6} className="ui-td pl-10 text-xs text-[var(--text-primary)]/40 italic">No sub-entities found in this period.</td>
+        <td colSpan={6} className="ui-td pl-10 text-xs text-[var(--text-primary)]/40 italic">{t('reports.noActivityPeriod', 'No sub-entities found in this period.')}</td>
       </tr>
     )
   }
@@ -144,11 +144,11 @@ function SubledgerRows({ control, start, end, fmt, onLoaded, cached }: ExpandedR
       {/* Sub-entity header */}
       <tr className="bg-[var(--bg-page)]">
         <th className="ui-th" />
-        <th className="ui-th pl-10 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">Name</th>
-        <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">Opening</th>
+        <th className="ui-th pl-10 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('col.name', 'Name')}</th>
+        <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('col.opening', 'Opening')}</th>
         <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('col.debit', 'Debit')}</th>
         <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('col.credit', 'Credit')}</th>
-        <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">Closing</th>
+        <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('col.closing', 'Closing')}</th>
       </tr>
       {data.items.map(item => (
         <tr key={item.id} className="bg-[#fdfcfa] hover:bg-[#faf8f4]">
@@ -173,7 +173,9 @@ function SubledgerRows({ control, start, end, fmt, onLoaded, cached }: ExpandedR
       <tr className="bg-[var(--bg-page)] font-semibold text-[var(--text-primary)]">
         <td className="ui-td" />
         <td className="ui-td pl-10 text-xs text-[var(--text-primary)]/55 uppercase tracking-widest">
-          {data.items.length} sub-{control === "ar" ? "customer" : "vendor"}{data.items.length !== 1 ? "s" : ""}
+          {control === "ar"
+            ? t('reports.subCustomers', { count: data.items.length, defaultValue: `${data.items.length} sub-customer(s)` })
+            : t('reports.subVendors', { count: data.items.length, defaultValue: `${data.items.length} sub-vendor(s)` })}
         </td>
         <td className="ui-td text-right font-mono text-sm" />
         <td className="ui-td text-right font-mono text-sm" />
@@ -213,12 +215,12 @@ function AllAccountsTable({ allLedger, start, end, fmt, subledgerCache, onSubled
         <table className="w-full text-sm min-w-[640px]">
           <thead className="bg-[var(--bg-page)] border-b border-[var(--border)]">
             <tr>
-              <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-28">Code</th>
+              <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-28">{t('col.code', 'Code')}</th>
               <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('col.account', 'Account')}</th>
-              <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">Opening</th>
+              <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">{t('col.opening', 'Opening')}</th>
               <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">{t('col.debit', 'Debit')}</th>
               <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">{t('col.credit', 'Credit')}</th>
-              <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">Closing</th>
+              <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">{t('col.closing', 'Closing')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)]">
@@ -230,8 +232,8 @@ function AllAccountsTable({ allLedger, start, end, fmt, subledgerCache, onSubled
               const totalCredit = acc.entries.reduce((s, e) => s + (e.credit || 0), 0)
               const badge = ctrl && subledgerCache[ctrl]
                 ? subledgerCache[ctrl]!.reconciles
-                  ? <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold rounded bg-green-100 text-green-700">✓ reconciles</span>
-                  : <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-700">⚠ off by {fmt(Math.abs(subledgerCache[ctrl]!.sub_total - subledgerCache[ctrl]!.control_balance))}</span>
+                  ? <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold rounded bg-green-100 text-green-700">{t('reports.reconciles', '✓ reconciles')}</span>
+                  : <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-700">{t('reports.offBy', { diff: fmt(Math.abs(subledgerCache[ctrl]!.sub_total - subledgerCache[ctrl]!.control_balance)), defaultValue: `⚠ off by ${fmt(Math.abs(subledgerCache[ctrl]!.sub_total - subledgerCache[ctrl]!.control_balance))}` })}</span>
                 : null
 
               return (
@@ -370,17 +372,17 @@ function LedgerPageInner() {
   return (
     <div>
       <PrintHeader
-        title={selectedAccount ? `Ledger — ${selectedAccount.code} ${selectedAccount.name}` : "General Ledger"}
-        subtitle={`Period: ${start} — ${end}`}
+        title={selectedAccount ? `${t('page.generalLedger', 'General Ledger')} — ${selectedAccount.code} ${selectedAccount.name}` : t('page.generalLedger', 'General Ledger')}
+        subtitle={`${t('common.period', 'Period')}: ${start} — ${end}`}
         orientation="landscape"
       />
 
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-4 print:hidden">
-        <Link href="/coa" className="hover:text-[var(--primary)] transition-colors">Chart of Accounts</Link>
+        <Link href="/coa" className="hover:text-[var(--primary)] transition-colors">{t('nav.Chart of Accounts', 'Chart of Accounts')}</Link>
         <ChevronRight className="w-3 h-3" />
         <span className="text-[var(--text-muted)] font-medium">
-          {selectedAccount ? `${selectedAccount.code} — ${selectedAccount.name}` : "General Ledger"}
+          {selectedAccount ? `${selectedAccount.code} — ${selectedAccount.name}` : t('page.generalLedger', 'General Ledger')}
         </span>
       </nav>
 
@@ -389,11 +391,11 @@ function LedgerPageInner() {
         <div className="flex items-center gap-3 min-w-0">
           <BookOpen className="w-5 h-5 text-[var(--primary)] shrink-0" />
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">General Ledger</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{t('page.generalLedger', 'General Ledger')}</h1>
             <p className="text-xs text-[var(--text-primary)]/55 hidden sm:block">
               {view === "consolidated"
-                ? "Select an account to view its transaction history with running balance"
-                : "All accounts — expand AR / AP rows to see per-entity breakdowns"}
+                ? t('reports.glSubtitleConsolidated', 'Select an account to view its transaction history with running balance')
+                : t('reports.glSubtitleSubledger', 'All accounts — expand AR / AP rows to see per-entity breakdowns')}
             </p>
           </div>
         </div>
@@ -403,20 +405,20 @@ function LedgerPageInner() {
             <button
               onClick={() => setView("consolidated")}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-sm font-bold transition-colors ${view === "consolidated" ? "bg-[var(--text-primary)] text-white" : "bg-white text-[var(--text-muted)] hover:bg-[var(--bg-page)]"}`}
-              title="Single account view"
+              title={t('reports.singleAccountView', 'Single account view')}
             >
               <List className="w-4 h-4 shrink-0" />
-              <span className="sm:hidden">Consol.</span>
-              <span className="hidden sm:inline">Consolidated</span>
+              <span className="sm:hidden">{t('reports.consolidated', 'Consol.')}</span>
+              <span className="hidden sm:inline">{t('reports.consolidated', 'Consolidated')}</span>
             </button>
             <button
               onClick={() => setView("subledger")}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-sm font-bold transition-colors ${view === "subledger" ? "bg-[var(--text-primary)] text-white" : "bg-white text-[var(--text-muted)] hover:bg-[var(--bg-page)]"}`}
-              title="Sub-ledger view with expandable control accounts"
+              title={t('reports.subledgerView', 'Sub-ledger view with expandable control accounts')}
             >
               <Layers className="w-4 h-4 shrink-0" />
-              <span className="sm:hidden">Sub</span>
-              <span className="hidden sm:inline">Sub-Ledger</span>
+              <span className="sm:hidden">{t('reports.subledger', 'Sub')}</span>
+              <span className="hidden sm:inline">{t('reports.subledger', 'Sub-Ledger')}</span>
             </button>
           </div>
 
@@ -434,7 +436,7 @@ function LedgerPageInner() {
                 }))
               )}
               className="p-2.5 bg-white border border-[var(--border)] rounded-lg hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60"
-              title="Export CSV"
+              title={t('common.exportCsv', 'Export CSV')}
             >
               <Download className="w-4 h-4" />
             </button>
@@ -443,7 +445,7 @@ function LedgerPageInner() {
             onClick={() => window.print()}
             disabled={view === "consolidated" && (!selectedAccount || !ledgerData)}
             className="p-2.5 bg-white border border-[var(--border)] rounded-lg hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60 disabled:opacity-30 disabled:cursor-not-allowed"
-            title={view === "consolidated" && (!selectedAccount || !ledgerData) ? "Select an account first" : "Print ledger"}
+            title={view === "consolidated" && (!selectedAccount || !ledgerData) ? t('reports.selectAccountPrompt', 'Select an account first') : t('common.print', 'Print ledger')}
           >
             <Printer className="w-4 h-4" />
           </button>
@@ -472,7 +474,7 @@ function LedgerPageInner() {
                   >✕</button>
                 </>
               ) : (
-                <span className="text-sm text-[var(--text-primary)]/40">Select account…</span>
+                <span className="text-sm text-[var(--text-primary)]/40">{t('reports.selectAccountPrompt', 'Select account…')}</span>
               )}
             </div>
 
@@ -482,7 +484,7 @@ function LedgerPageInner() {
                   <input
                     autoFocus
                     type="text"
-                    placeholder="Search code or name…"
+                    placeholder={t('reports.searchAccountPrompt', 'Search code or name…')}
                     value={accountSearch}
                     onChange={e => setAccountSearch(e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
@@ -491,7 +493,7 @@ function LedgerPageInner() {
                 </div>
                 <div className="overflow-y-auto flex-1">
                   {filteredAccounts.length === 0 ? (
-                    <p className="text-center py-6 text-sm text-[var(--text-primary)]/40">No accounts match</p>
+                    <p className="text-center py-6 text-sm text-[var(--text-primary)]/40">{t('reports.noAccountsMatch', 'No accounts match')}</p>
                   ) : (
                     filteredAccounts.map(a => (
                       <button
@@ -527,8 +529,8 @@ function LedgerPageInner() {
           {!selectedAccount && (
             <div className="bg-white border border-[var(--border)] rounded-xl py-20 text-center print:hidden">
               <BookOpen className="w-10 h-10 text-[var(--primary)]/40 mx-auto mb-3" />
-              <p className="text-sm font-medium text-[var(--text-primary)]/50">Select an account above to view its ledger</p>
-              <p className="text-xs text-[var(--text-primary)]/35 mt-1">Transaction history with running balance will appear here</p>
+              <p className="text-sm font-medium text-[var(--text-primary)]/50">{t('reports.selectAccountToView', 'Select an account above to view its ledger')}</p>
+              <p className="text-xs text-[var(--text-primary)]/35 mt-1">{t('reports.historyWillAppear', 'Transaction history with running balance will appear here')}</p>
             </div>
           )}
 
@@ -546,7 +548,7 @@ function LedgerPageInner() {
           {selectedAccount && !isLoading && !ledgerData && (
             <div className="bg-white border border-[var(--border)] rounded-xl py-12 text-center">
               <p className="text-sm text-[var(--text-primary)]/50">
-                No transactions for <span className="font-mono text-[var(--primary)]">{selectedAccount.code}</span> in the selected period.
+                {t('reports.noTxForAccount', { code: selectedAccount.code, defaultValue: `No transactions for ${selectedAccount.code} in the selected period.` })}
               </p>
             </div>
           )}
@@ -563,19 +565,19 @@ function LedgerPageInner() {
                 </div>
                 <div className="flex items-center gap-6 text-right">
                   <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)]/50">Total Debit</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)]/50">{t('reports.totalDebit', 'Total Debit')}</p>
                     <p className="font-mono text-sm font-semibold">
                       {fmt(ledgerData.entries.reduce((s, e) => s + (e.debit || 0), 0))}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)]/50">Total Credit</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)]/50">{t('reports.totalCredit', 'Total Credit')}</p>
                     <p className="font-mono text-sm font-semibold">
                       {fmt(ledgerData.entries.reduce((s, e) => s + (e.credit || 0), 0))}
                     </p>
                   </div>
                   <div className="border-l border-[var(--border)] pl-6">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)]/50">Closing Balance</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)]/50">{t('reports.closingBalance', 'Closing Balance')}</p>
                     <p className={`font-mono font-bold text-base ${closing < 0 ? "text-red-600" : "text-[var(--text-primary)]"}`}>
                       {fmt(closing)}
                     </p>
@@ -588,8 +590,8 @@ function LedgerPageInner() {
                 <table className="w-full text-sm min-w-[640px]">
                   <thead className="bg-[var(--bg-page)] border-b border-[var(--border)]">
                     <tr>
-                      <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-28">Date</th>
-                      <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">JV #</th>
+                      <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-28">{t('col.date', 'Date')}</th>
+                      <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">{t('col.jvNumber', 'JV #')}</th>
                       <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('col.description', 'Description')}</th>
                       <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">{t('col.debit', 'Debit')}</th>
                       <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">{t('col.credit', 'Credit')}</th>
@@ -598,7 +600,7 @@ function LedgerPageInner() {
                   </thead>
                   <tbody className="divide-y divide-[var(--border)]">
                     <tr className="bg-[var(--bg-page)] text-[var(--text-primary)]/70 text-xs font-semibold">
-                      <td className="px-4 py-2" colSpan={3}>Opening Balance</td>
+                      <td className="px-4 py-2" colSpan={3}>{t('reports.openingBalance', 'Opening Balance')}</td>
                       <td className="px-4 py-2 text-right font-mono" colSpan={2} />
                       <td className="px-4 py-2 text-right font-mono">{fmt(Number(ledgerData.opening_balance))}</td>
                     </tr>
@@ -626,7 +628,7 @@ function LedgerPageInner() {
                       </tr>
                     ))}
                     <tr className="bg-[#faf8f4] font-bold text-[var(--text-primary)]">
-                      <td className="px-4 py-2" colSpan={3}>Closing Balance</td>
+                      <td className="px-4 py-2" colSpan={3}>{t('reports.closingBalance', 'Closing Balance')}</td>
                       <td className="px-4 py-2 text-right font-mono" colSpan={2} />
                       <td className="px-4 py-2 text-right font-mono">{fmt(Number(ledgerData.closing_balance))}</td>
                     </tr>
@@ -634,7 +636,7 @@ function LedgerPageInner() {
                   <tfoot className="border-t-2 border-[var(--text-primary)]/10">
                     <tr className="bg-[var(--bg-page)]">
                       <td colSpan={3} className="ui-td text-xs font-bold text-[var(--text-primary)]/55 uppercase tracking-widest">
-                        {ledgerData.entries.length} transaction{ledgerData.entries.length !== 1 ? "s" : ""}
+                        {t('reports.txCount', { count: ledgerData.entries.length, defaultValue: `${ledgerData.entries.length} transaction(s)` })}
                       </td>
                       <td className="ui-td text-right font-mono font-bold">
                         {fmt(ledgerData.entries.reduce((s, e) => s + (e.debit || 0), 0))}
@@ -669,15 +671,15 @@ function LedgerPageInner() {
           {!allLedgerLoading && allLedger.length === 0 && (
             <div className="bg-white border border-[var(--border)] rounded-xl py-20 text-center">
               <BookOpen className="w-10 h-10 text-[var(--primary)]/40 mx-auto mb-3" />
-              <p className="text-sm font-medium text-[var(--text-primary)]/50">No activity in the selected period</p>
-              <p className="text-xs text-[var(--text-primary)]/35 mt-1">Try widening the date range</p>
+              <p className="text-sm font-medium text-[var(--text-primary)]/50">{t('reports.noActivityPeriod', 'No activity in the selected period')}</p>
+              <p className="text-xs text-[var(--text-primary)]/35 mt-1">{t('reports.tryWidening', 'Try widening the date range')}</p>
             </div>
           )}
 
           {!allLedgerLoading && allLedger.length > 0 && (
             <>
               <p className="text-xs text-[var(--text-primary)]/50 mb-3 print:hidden">
-                Accounts with activity in the period. Click on <span className="font-semibold text-[var(--primary)]">AR / AP</span> rows to expand per-entity breakdowns.
+                {t('reports.accountsWithActivity', 'Accounts with activity in the period. Click on AR / AP rows to expand per-entity breakdowns.')}
               </p>
               <AllAccountsTable
                 allLedger={allLedger}

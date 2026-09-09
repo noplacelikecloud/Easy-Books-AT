@@ -98,10 +98,21 @@ export default function COAPage() {
   useEffect(loadAccounts, [loadAccounts])
 
   const handleDelete = async (acc: Account) => {
+    if (acc.has_children) {
+      toast(
+        t(
+          "coa.cannotDeleteParent",
+          "Diese Kontenklasse bzw. dieses Sammelkonto kann nicht gelöscht werden, da noch Unterkonten zugeordnet sind. Bitte löschen oder verschieben Sie zuerst die Unterkonten."
+        ),
+        "error"
+      )
+      return
+    }
+
     const ok = await confirm({
-      title: `Delete account "${acc.name}"?`,
-      message: "This cannot be undone.",
-      confirmLabel: "Delete",
+      title: t("coa.deleteConfirmTitle", `Konto "${acc.code} - ${acc.name}" löschen?`, { name: `${acc.code} - ${acc.name}` }),
+      message: t("coa.deleteConfirmMsg", "Diese Aktion kann nicht rückgängig gemacht werden."),
+      confirmLabel: t("common.delete", "Löschen"),
       danger: true,
     })
     if (!ok) return
@@ -153,11 +164,11 @@ export default function COAPage() {
 
   return (
     <div>
-      <PrintHeader title="Chart of Accounts" />
+      <PrintHeader title={t('nav.Chart of Accounts', 'Chart of Accounts')} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3 print:hidden">
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold text-[var(--text-primary)]">Chart of Accounts</h1>
-          <p className="text-[var(--text-primary)]/60">Manage your organisation&apos;s ledger accounts</p>
+          <h1 className="text-xl sm:text-3xl font-bold text-[var(--text-primary)]">{t('nav.Chart of Accounts', 'Chart of Accounts')}</h1>
+          <p className="text-[var(--text-primary)]/60">{t('coa.subtitle', "Manage your organisation's ledger accounts")}</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <CsvImportButton entity="accounts" onSuccess={loadAccounts} />
@@ -165,15 +176,15 @@ export default function COAPage() {
             onClick={() => downloadCSV('chart-of-accounts.csv', accounts.map(a => ({ Code: a.code, Name: a.name, Type: a.type, Group: a.is_group ? 'Yes' : 'No', Active: a.is_active !== false ? 'Yes' : 'No', Balance: balances[a.code] ?? 0 })))}
             disabled={accounts.length === 0}
             className="border border-[var(--border)] px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-[var(--bg-page)] transition-colors font-bold text-sm disabled:opacity-40"
-            title="Export CSV"
+            title={t('common.exportCsv', 'Export CSV')}
           >
             <Download className="w-4 h-4" />
-            Export
+            {t('common.export', 'Export')}
           </button>
           <button
             onClick={() => window.print()}
             className="border border-[var(--border)] px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-[var(--bg-page)] transition-colors font-bold text-sm"
-            title="Print"
+            title={t('common.print', 'Print')}
           >
             <Printer className="w-4 h-4" />{t('common.print', 'Print')}</button>
           <button
@@ -181,7 +192,7 @@ export default function COAPage() {
             className="bg-[var(--primary)] text-black font-bold px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-[#a38338] transition-colors"
           >
             <Plus className="w-5 h-5" />
-            Add Account
+            {t('coa.addAccount', 'Add Account')}
           </button>
         </div>
       </div>
@@ -190,7 +201,7 @@ export default function COAPage() {
         <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-primary)]/40" />
         <input
           type="text"
-          placeholder="Search by name or code…"
+          placeholder={t('coa.searchPlaceholder', 'Search by name or code…')}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full pl-12 pr-4 py-3 bg-white border border-[var(--text-primary)]/10 rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)]"
@@ -202,9 +213,9 @@ export default function COAPage() {
           <table className="w-full text-left min-w-[640px]">
             <thead>
               <tr className="bg-[var(--bg-page)] border-b border-[var(--text-primary)]/5">
-                <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Code</th>
-                <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Account Name</th>
-                <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Type</th>
+                <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">{t('col.code', 'Code')}</th>
+                <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">{t('col.accountName', 'Account Name')}</th>
+                <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">{t('col.type', 'Type')}</th>
                 <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">{t('col.status', 'Status')}</th>
                 <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 text-right">{t('col.balance', 'Balance')}</th>
                 <th className="px-8 py-5 text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 print:hidden">{t('col.actions', 'Actions')}</th>
@@ -216,7 +227,7 @@ export default function COAPage() {
               ) : displayAccounts.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-8 py-10 text-center text-[var(--text-primary)]/75">
-                    No accounts found.
+                    {t('coa.noAccounts', 'No accounts found.')}
                   </td>
                 </tr>
               ) : (
@@ -281,12 +292,12 @@ export default function COAPage() {
                         <div className="flex flex-wrap gap-1">
                           {isGroupAccount && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-amber-100 text-amber-700">
-                              Header
+                              {t('col.header', 'Header')}
                             </span>
                           )}
                           {acc.postable && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-emerald-100 text-emerald-700">
-                              Posting
+                              {t('col.posting', 'Posting')}
                             </span>
                           )}
                           {isInactive && (
@@ -307,7 +318,7 @@ export default function COAPage() {
                             onClick={() => { setEditAccount(acc); setModalOpen(true) }}
                             className="text-[var(--primary)] text-sm font-bold hover:underline"
                           >
-                            Edit
+                            {t('common.edit', 'Edit')}
                           </button>
                           <button
                             onClick={() => handleToggleActive(acc)}
@@ -315,13 +326,23 @@ export default function COAPage() {
                               "text-xs font-semibold hover:underline",
                               isInactive ? "text-emerald-600" : "text-[var(--text-primary)]/40 hover:text-[var(--text-primary)]/70"
                             )}
-                            title={isInactive ? "Activate account" : "Deactivate account"}
+                            title={isInactive ? t('common.activate', 'Activate account') : t('common.deactivate', 'Deactivate account')}
                           >
-                            {isInactive ? "Activate" : "Deactivate"}
+                            {isInactive ? t('common.activate', 'Activate') : t('common.deactivate', 'Deactivate')}
                           </button>
                           <button
                             onClick={() => handleDelete(acc)}
-                            className="text-red-400 hover:text-red-600 transition-colors"
+                            className={cn(
+                              "transition-colors",
+                              acc.has_children
+                                ? "text-gray-300 hover:text-gray-400 cursor-not-allowed"
+                                : "text-red-400 hover:text-red-600"
+                            )}
+                            title={
+                              acc.has_children
+                                ? t("coa.cannotDeleteParentTooltip", "Enthält Unterkonten (Löschen nicht möglich)")
+                                : t("common.delete", "Löschen")
+                            }
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

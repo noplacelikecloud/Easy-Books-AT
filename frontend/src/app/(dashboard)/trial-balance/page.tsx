@@ -65,20 +65,20 @@ export default function TrialBalancePage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <PrintHeader title="Trial Balance" subtitle={`Period: ${start} — ${end}`} />
+      <PrintHeader title={t('page.trialBalance', 'Trial Balance')} subtitle={`${t('common.period', 'Period')}: ${start} — ${end}`} />
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 print:hidden">
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold text-[var(--text-primary)]">Trial Balance</h1>
-          <p className="text-[var(--text-primary)]/60">Debit and credit totals per account</p>
+          <h1 className="text-xl sm:text-3xl font-bold text-[var(--text-primary)]">{t('page.trialBalance', 'Trial Balance')}</h1>
+          <p className="text-[var(--text-primary)]/60">{t('reports.tbSubtitle', 'Debit and credit totals per account')}</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => window.print()} className="p-3 bg-white border border-[var(--text-primary)]/10 rounded-xl hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60 print:hidden" title="Print">
+          <button onClick={() => window.print()} className="p-3 bg-white border border-[var(--text-primary)]/10 rounded-xl hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60 print:hidden" title={t('common.print', 'Print')}>
             <Printer className="w-5 h-5" />
           </button>
           <button
             onClick={() => downloadCSV(`trial-balance-${start}-${end}.csv`, flatten(tree).map(d => ({ Code: d.code, Name: d.name, Type: d.type, Debit: d.debit, Credit: d.credit })))}
             className="p-3 bg-white border border-[var(--text-primary)]/10 rounded-xl hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60 print:hidden"
-            title="Export CSV"
+            title={t('common.exportCsv', 'Export CSV')}
           >
             <Download className="w-5 h-5" />
           </button>
@@ -86,7 +86,7 @@ export default function TrialBalancePage() {
       </div>
 
       <div className="mb-6 p-4 bg-white border border-[var(--border)] rounded-xl print:hidden">
-        <DateRangePicker start={start} end={end} onStartChange={setStart} onEndChange={setEnd} label="Period" />
+        <DateRangePicker start={start} end={end} onStartChange={setStart} onEndChange={setEnd} label={t('common.period', 'Period')} />
       </div>
 
       <div className="bg-white rounded-3xl shadow-xl shadow-black/5 border border-[var(--text-primary)]/5 overflow-hidden">
@@ -101,9 +101,9 @@ export default function TrialBalancePage() {
           </thead>
           <tbody className="divide-y divide-[var(--text-primary)]/5">
             {isLoading ? (
-              <tr><td colSpan={3} className="px-8 py-10 text-center text-[var(--text-primary)]/75">Generating report...</td></tr>
+              <tr><td colSpan={3} className="px-8 py-10 text-center text-[var(--text-primary)]/75">{t('common.generatingReport', 'Generating report...')}</td></tr>
             ) : !hasData ? (
-              <tr><td colSpan={3} className="px-8 py-10 text-center text-[var(--text-primary)]/75">No balances found for selected period.</td></tr>
+              <tr><td colSpan={3} className="px-8 py-10 text-center text-[var(--text-primary)]/75">{t('reports.noBalances', 'No balances found for selected period.')}</td></tr>
             ) : (
               <AccountTreeRows
                 nodes={tree}
@@ -118,7 +118,7 @@ export default function TrialBalancePage() {
           {!isLoading && hasData && (
             <tfoot>
               <tr className="bg-[var(--text-primary)] text-white">
-                <td className="px-8 py-5 font-bold uppercase tracking-widest text-xs">Grand Total</td>
+                <td className="px-8 py-5 font-bold uppercase tracking-widest text-xs">{t('common.total', 'Grand Total')}</td>
                 <td className="px-8 py-5 text-right font-mono font-bold">{fmt(grandTotalDebit)}</td>
                 <td className="px-8 py-5 text-right font-mono font-bold">{fmt(grandTotalCredit)}</td>
               </tr>
@@ -131,7 +131,7 @@ export default function TrialBalancePage() {
       {!isLoading && Math.abs(grandTotalDebit - grandTotalCredit) > 0.01 && (
         <div className="mt-6 p-4 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          Warning: Trial balance is not matching. Difference: {fmt(Math.abs(grandTotalDebit - grandTotalCredit))}
+          {t('reports.tbMismatchWarning', { diff: fmt(Math.abs(grandTotalDebit - grandTotalCredit)), defaultValue: `Warning: Trial balance is not matching. Difference: ${fmt(Math.abs(grandTotalDebit - grandTotalCredit))}` })}
         </div>
       )}
     </div>

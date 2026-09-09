@@ -4,6 +4,7 @@ import Link from "next/link"
 import { VOUCHER_TYPES } from "@/lib/voucherTypes"
 import { useFmt, useCurrency } from "@/context/SettingsContext"
 import { fmtDate } from "@/lib/utils"
+import { useTranslation } from "react-i18next"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,7 @@ interface LedgerEntriesTableProps {
  * balances remain unchanged (filter is display-only, not a recalculation).
  */
 export default function LedgerEntriesTable({ payload, voucherFilter }: LedgerEntriesTableProps) {
+  const { t } = useTranslation()
   const fmt      = useFmt()
   const currency = useCurrency()
 
@@ -75,18 +77,18 @@ export default function LedgerEntriesTable({ payload, voucherFilter }: LedgerEnt
         <div className="flex items-center gap-6 text-right">
           <div>
             <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)]/50">
-              {voucherFilter ? "Filtered Debit" : "Total Debit"}
+              {voucherFilter ? t('reports.filteredDebit', 'Filtered Debit') : t('reports.totalDebit', 'Total Debit')}
             </p>
             <p className="font-mono text-sm font-semibold">{fmt(totalDebit)}</p>
           </div>
           <div>
             <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)]/50">
-              {voucherFilter ? "Filtered Credit" : "Total Credit"}
+              {voucherFilter ? t('reports.filteredCredit', 'Filtered Credit') : t('reports.totalCredit', 'Total Credit')}
             </p>
             <p className="font-mono text-sm font-semibold">{fmt(totalCredit)}</p>
           </div>
           <div className="border-l border-[var(--border)] pl-6">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)]/50">Closing Balance</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-primary)]/50">{t('reports.closingBalance', 'Closing Balance')}</p>
             <p className={`font-mono font-bold text-base ${closing < 0 ? "text-red-600" : "text-[var(--text-primary)]"}`}>
               {fmt(closing)}
             </p>
@@ -99,18 +101,18 @@ export default function LedgerEntriesTable({ payload, voucherFilter }: LedgerEnt
         <table className="w-full text-sm min-w-[640px]">
           <thead className="bg-[var(--bg-page)] border-b border-[var(--border)]">
             <tr>
-              <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-28">Date</th>
-              <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-36">Voucher</th>
-              <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">Description</th>
-              <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">Debit ({currency})</th>
-              <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">Credit ({currency})</th>
-              <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">Balance ({currency})</th>
+              <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-28">{t('col.date', 'Date')}</th>
+              <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-36">{t('col.voucher', 'Voucher')}</th>
+              <th className="ui-th text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55">{t('col.description', 'Description')}</th>
+              <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">{t('col.debit', 'Debit')} ({currency})</th>
+              <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">{t('col.credit', 'Credit')} ({currency})</th>
+              <th className="ui-th text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 w-32">{t('col.balance', 'Balance')} ({currency})</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--bg-page)]">
             {/* Opening balance row */}
             <tr className="bg-[var(--bg-page)] text-[var(--text-primary)]/70 text-xs font-semibold">
-              <td className="px-4 py-2" colSpan={3}>Opening Balance</td>
+              <td className="px-4 py-2" colSpan={3}>{t('reports.openingBalance', 'Opening Balance')}</td>
               <td className="px-4 py-2 text-right font-mono" colSpan={2} />
               <td className="px-4 py-2 text-right font-mono">{fmt(opening)}</td>
             </tr>
@@ -119,8 +121,8 @@ export default function LedgerEntriesTable({ payload, voucherFilter }: LedgerEnt
               <tr>
                 <td colSpan={6} className="ui-td py-8 text-center text-sm text-[var(--text-primary)]/40 italic">
                   {voucherFilter
-                    ? `No ${VOUCHER_TYPES[voucherFilter] ?? voucherFilter} entries in this period.`
-                    : "No transactions in this period."}
+                    ? t('reports.noFilteredTransactions', { type: VOUCHER_TYPES[voucherFilter] ?? voucherFilter, defaultValue: `No ${VOUCHER_TYPES[voucherFilter] ?? voucherFilter} entries in this period.` })
+                    : t('reports.noTransactions', 'No transactions in this period.')}
                 </td>
               </tr>
             ) : (
@@ -151,7 +153,7 @@ export default function LedgerEntriesTable({ payload, voucherFilter }: LedgerEnt
 
             {/* Closing balance row */}
             <tr className="bg-[#faf8f4] font-bold text-[var(--text-primary)]">
-              <td className="px-4 py-2" colSpan={3}>Closing Balance</td>
+              <td className="px-4 py-2" colSpan={3}>{t('reports.closingBalance', 'Closing Balance')}</td>
               <td className="px-4 py-2 text-right font-mono" colSpan={2} />
               <td className="px-4 py-2 text-right font-mono">{fmt(closing)}</td>
             </tr>
@@ -159,10 +161,9 @@ export default function LedgerEntriesTable({ payload, voucherFilter }: LedgerEnt
           <tfoot className="border-t-2 border-[var(--text-primary)]/10">
             <tr className="bg-[var(--bg-page)]">
               <td colSpan={3} className="ui-td text-xs font-bold text-[var(--text-primary)]/55 uppercase tracking-widest">
-                {visibleEntries.length} transaction{visibleEntries.length !== 1 ? "s" : ""}
                 {voucherFilter && payload.entries.length !== visibleEntries.length
-                  ? ` (filtered from ${payload.entries.length})`
-                  : ""}
+                  ? t('reports.txCountFiltered', { count: visibleEntries.length, total: payload.entries.length, defaultValue: `${visibleEntries.length} transactions (filtered from ${payload.entries.length})` })
+                  : t('reports.txCount', { count: visibleEntries.length, defaultValue: `${visibleEntries.length} transactions` })}
               </td>
               <td className="ui-td text-right font-mono font-bold">{fmt(totalDebit)}</td>
               <td className="ui-td text-right font-mono font-bold">{fmt(totalCredit)}</td>

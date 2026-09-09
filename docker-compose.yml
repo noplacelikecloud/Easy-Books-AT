@@ -14,7 +14,7 @@ services:
       # If blank, local_config.py auto-generates one and persists it in /data.
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
       # Auto-load 5 demo companies on first run. Set to false for a clean install.
-      SEED_DEMO: ${SEED_DEMO:-true}
+      SEED_DEMO: ${SEED_DEMO:-false}
       # Optional: switch to PostgreSQL.
       # DATABASE_URL: postgresql://user:password@host:5432/easybooks
       DATABASE_URL: ${DATABASE_URL:-}

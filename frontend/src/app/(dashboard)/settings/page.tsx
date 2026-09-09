@@ -2016,7 +2016,7 @@ function AppearanceSection() {
               }`}
             >
               <span className="text-lg leading-none">
-                {lang.code === "en" ? "🇬🇧" : lang.code === "ur" ? "🇵🇰" : "🇨🇳"}
+                {lang.code === "en" ? "🇬🇧" : lang.code === "de" ? "🇦🇹" : lang.code === "ur" ? "🇵🇰" : "🇨🇳"}
               </span>
               <span>{lang.nativeLabel}</span>
               <span className="text-xs text-[var(--text-primary)]/40">({lang.label})</span>

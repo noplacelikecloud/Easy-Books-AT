@@ -24,7 +24,7 @@ export default function AccountListBand({ accounts }: AccountListBandProps) {
   return (
     <div className="bg-white rounded-xl p-3">
       <div className="text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/40 mb-2">
-        Account Balances
+        {t("hub.accountBalances", "Account Balances")}
       </div>
       <div className="flex flex-col gap-1.5">
         {shown.map(acc => (
@@ -41,7 +41,7 @@ export default function AccountListBand({ accounts }: AccountListBandProps) {
             href="/bank-accounts"
             className="text-[10px] text-[var(--primary)] hover:underline text-right mt-0.5"
           >
-            +{overflow} more →
+            +{overflow} {t("common.more", "more")} →
           </Link>
         )}
       </div>

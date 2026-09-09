@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { LayoutDashboard, FileSignature, Receipt, BarChart2, MoreHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getActiveSection } from "@/lib/nav"
+import { useTranslation } from "react-i18next"
 
 const TABS = [
   { label: "Home",      href: "/dashboard",     icon: LayoutDashboard, section: "dashboard" },
@@ -18,6 +19,7 @@ interface Props { onMore: () => void }
 export default function BottomNav({ onMore }: Props) {
   const pathname      = usePathname()
   const activeSection = getActiveSection(pathname)
+  const { t }         = useTranslation()
 
   return (
     <nav className="bottom-nav md:hidden print:hidden fixed bottom-0 inset-x-0 z-40 bg-[var(--bg-card)] border-t border-[var(--border)] flex items-stretch">
@@ -33,7 +35,7 @@ export default function BottomNav({ onMore }: Props) {
             )}
           >
             <Icon className="w-5 h-5" />
-            {label}
+            {t(`nav.${label}`, label)}
           </Link>
         )
       })}
@@ -42,7 +44,7 @@ export default function BottomNav({ onMore }: Props) {
         className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
       >
         <MoreHorizontal className="w-5 h-5" />
-        More
+        {t("nav.More", "More")}
       </button>
     </nav>
   )

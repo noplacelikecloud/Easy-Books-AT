@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { X, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTabs, type Tab } from "@/context/TabContext"
+import { useTranslation } from "react-i18next"
 
 function TabItem({ tab, active, onClose }: {
   tab: Tab
@@ -13,6 +14,8 @@ function TabItem({ tab, active, onClose }: {
 }) {
   const router = useRouter()
   const isHome = tab.href === "/dashboard"
+  const { t } = useTranslation()
+  const displayTitle = t(`nav.${tab.title}`, tab.title)
 
   return (
     <div
@@ -25,11 +28,11 @@ function TabItem({ tab, active, onClose }: {
           : "bg-[#f0ede6] text-[var(--text-primary)]/60 hover:bg-[#e8e4dc] hover:text-[var(--text-primary)]"
       )}
       onClick={() => router.push(tab.href)}
-      title={tab.title}
+      title={displayTitle}
     >
       {isHome && <Home className="w-3 h-3 shrink-0 opacity-70" />}
       <span className="text-[11px] font-medium truncate flex-1 leading-none">
-        {tab.title}
+        {displayTitle}
       </span>
       {!isHome && (
         <button
@@ -39,7 +42,7 @@ function TabItem({ tab, active, onClose }: {
             "opacity-0 group-hover:opacity-100 hover:bg-black/10 transition-opacity",
             active && "opacity-40 hover:opacity-100"
           )}
-          title="Close tab"
+          title={t("common.close", "Close tab")}
         >
           <X className="w-2.5 h-2.5" />
         </button>

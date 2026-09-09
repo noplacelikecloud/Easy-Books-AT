@@ -17,6 +17,17 @@ depends_on = None
 
 def upgrade() -> None:
     bind = op.get_bind()
+    # Alembic creates ``alembic_version.version_num`` as VARCHAR(32), while
+    # this and later descriptive revision IDs are up to 34 characters long.
+    # SQLite does not enforce the declared length, but PostgreSQL does.
+    if bind.dialect.name == "postgresql":
+        op.alter_column(
+            "alembic_version",
+            "version_num",
+            existing_type=sa.String(length=32),
+            type_=sa.String(length=128),
+            existing_nullable=False,
+        )
     if bind.dialect.has_table(bind, "hc_patient"):
         cols = {c["name"] for c in sa.inspect(bind).get_columns("hc_patient")}
         if "email" not in cols:

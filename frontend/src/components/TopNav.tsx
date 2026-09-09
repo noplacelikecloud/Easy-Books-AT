@@ -14,6 +14,9 @@ import { getCurrentUser, removeAuthToken } from "@/lib/auth"
 import { useSettings } from "@/context/SettingsContext"
 import { useModules } from "@/context/ModuleContext"
 import { useTheme } from "@/context/ThemeContext"
+import { useLocale } from "@/context/LocaleContext"
+import { useTranslation } from "react-i18next"
+import { LANGUAGES } from "@/i18n/config"
 import { TOP_NAV, SUB_NAV, getActiveSection, navVisible, navHrefPath, navItemActive } from "@/lib/nav"
 import { PURPOSE_MODULES } from "@/lib/dashboardHome"
 import type { TopNavSection } from "@/lib/nav"
@@ -130,11 +133,14 @@ export default function TopNav() {
   const { settings }         = useSettings()
   const { installedModules } = useModules()
   const { resolvedTheme, setTheme } = useTheme()
+  const { language, setLanguage } = useLocale()
+  const { t }                = useTranslation()
 
   const [userName, setUserName] = useState("User")
   const [initial, setInitial]   = useState("U")
   const [isAdmin, setIsAdmin]   = useState(false)
   const [userOpen, setUserOpen] = useState(false)
+  const [langOpen, setLangOpen] = useState(false)
 
   const [open, setOpen]               = useState<string | null>(null)
   const [panelAnchor, setPanelAnchor] = useState<DOMRect | null>(null)
@@ -143,6 +149,7 @@ export default function TopNav() {
   const [mounted, setMounted] = useState(false)
 
   const userRef       = useRef<HTMLDivElement>(null)
+  const langRef       = useRef<HTMLDivElement>(null)
   const stripRef      = useRef<HTMLDivElement>(null)
   const leftRef       = useRef<HTMLDivElement>(null)
   const rightRef      = useRef<HTMLDivElement>(null)
@@ -153,6 +160,11 @@ export default function TopNav() {
   const [budget, setBudget]           = useState(0)
 
   const activeSection = getActiveSection(pathname, installedModules)
+
+  const getSectionLabel = useCallback((section: TopNavSection, compact: boolean): string => {
+    const raw = compact && section.shortLabel ? section.shortLabel : section.label
+    return t(`section.${section.key}`, t(`section.${raw}`, t(`nav.${raw}`, raw)))
+  }, [t])
 
   const leftNav  = useMemo(() => TOP_NAV.filter(s => LEFT_KEYS.has(s.key)), [])
   const rightNav = useMemo(() => TOP_NAV.filter(s => RIGHT_KEYS.has(s.key)), [])
@@ -184,7 +196,7 @@ export default function TopNav() {
     if (!el) { setAddonWidths([]); return }
     const kids = Array.from(el.children) as HTMLElement[]
     setAddonWidths(kids.map(k => Math.ceil(k.getBoundingClientRect().width)))
-  }, [installedMods])
+  }, [installedMods, language])
 
   // ── Available width for the add-on cluster ─────────────────────────────────
   const recomputeBudget = useCallback(() => {
@@ -208,7 +220,7 @@ export default function TopNav() {
     if (rightRef.current) ro.observe(rightRef.current)
     if (moreRef.current) ro.observe(moreRef.current)
     return () => ro.disconnect()
-  }, [recomputeBudget, leftNav, rightNav, installedMods.length])
+  }, [recomputeBudget, leftNav, rightNav, installedMods.length, language])
 
   useEffect(() => setMounted(true), [])
 
@@ -225,6 +237,9 @@ export default function TopNav() {
     const handler = (e: MouseEvent) => {
       if (userRef.current && !userRef.current.contains(e.target as Node)) {
         setUserOpen(false)
+      }
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false)
       }
     }
     document.addEventListener("mousedown", handler)
@@ -270,7 +285,7 @@ export default function TopNav() {
                 : "text-[var(--text-primary)] hover:bg-[var(--bg-page)]"
             )}>
             <item.icon className="w-3.5 h-3.5 shrink-0 opacity-60" />
-            {item.label}
+            {t(`nav.${item.label}`, item.label)}
           </Link>
         ))}
       </>
@@ -283,11 +298,12 @@ export default function TopNav() {
         {overflowAddons.length > 0 && (
           <>
             <p className="px-4 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-              Sections
+              {t("nav.Sections", "Sections")}
             </p>
             {overflowAddons.map(section => {
               const expanded = moreExpanded === section.key
               const isActive = activeSection === section.key
+              const label    = getSectionLabel(section, false)
               return (
                 <div key={section.key}>
                   <button
@@ -300,7 +316,7 @@ export default function TopNav() {
                         : "text-[var(--text-primary)] hover:bg-[var(--bg-page)]"
                     )}
                   >
-                    <span>{section.label}</span>
+                    <span>{label}</span>
                     <ChevronDown className={cn(
                       "w-3 h-3 opacity-50 transition-transform duration-150",
                       expanded && "rotate-180",
@@ -319,7 +335,7 @@ export default function TopNav() {
         )}
 
         <p className="px-4 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-          Custom Reports
+          {t("nav.Custom Reports", "Custom Reports")}
         </p>
         <Link href="/reports/builder" onClick={closePanel}
           className={cn(
@@ -329,23 +345,23 @@ export default function TopNav() {
               : "text-[var(--text-primary)] hover:bg-[var(--bg-page)]"
           )}>
           <Table2 className="w-3.5 h-3.5 shrink-0 opacity-60" />
-          Report Builder
+          {t("nav.Report Builder", "Report Builder")}
         </Link>
         <Link href="/reports/builder" onClick={closePanel}
           className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-page)] transition-colors">
           <LayoutGrid className="w-3.5 h-3.5 shrink-0 opacity-50" />
-          Saved Reports
+          {t("nav.Saved Reports", "Saved Reports")}
         </Link>
         {isAdmin && (
           <>
             <div className="border-t border-[var(--border-light)] mt-1 pt-1" />
             <p className="px-4 pt-1 pb-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-              Add-ons
+              {t("nav.Add-ons", "Add-ons")}
             </p>
             <Link href="/apps" onClick={closePanel}
               className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-page)] transition-colors">
               <Blocks className="w-3.5 h-3.5 shrink-0 opacity-50" />
-              Manage Add-ons
+              {t("nav.Manage Add-ons", "Manage Add-ons")}
             </Link>
           </>
         )}
@@ -383,7 +399,7 @@ export default function TopNav() {
   function renderTab(section: TopNavSection, compact = false) {
     const isActive = activeSection === section.key
     const isOpen   = open === section.key
-    const label    = tabLabel(section, compact)
+    const label    = getSectionLabel(section, compact)
     const cls = cn(
       "flex items-center gap-0.5 px-3 py-1.5 rounded-md text-[13px] whitespace-nowrap transition-colors cursor-pointer shrink-0",
       isActive
@@ -455,7 +471,7 @@ export default function TopNav() {
                 ? "bg-[var(--nav-hover)] text-[var(--nav-text)]"
                 : "text-[var(--nav-dim)] hover:bg-[var(--nav-hover)] hover:text-[var(--nav-text)]"
             )}>
-            More
+            {t("nav.More", "More")}
             {overflowAddons.length > 0 && (
               <span className="text-[10px] opacity-60 tabular-nums">+{overflowAddons.length}</span>
             )}
@@ -474,13 +490,13 @@ export default function TopNav() {
               key={s.key}
               className="flex items-center gap-0.5 px-3 py-1.5 rounded-md text-[13px] whitespace-nowrap shrink-0"
             >
-              {tabLabel(s, true)}
+              {getSectionLabel(s, true)}
               <ChevronDown className="w-3 h-3" />
             </span>
           ))}
         </div>
 
-        {/* Right side — search + theme toggle + avatar */}
+        {/* Right side — search + theme toggle + language selector + avatar */}
         <div className="flex items-center gap-1.5 ml-auto shrink-0">
 
           <button type="button"
@@ -499,6 +515,44 @@ export default function TopNav() {
             {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
+          {/* Language Switcher */}
+          <div ref={langRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setLangOpen(o => !o)}
+              title={`Language: ${language.toUpperCase()}`}
+              className="h-7 px-1.5 flex items-center gap-1 rounded-md text-[var(--nav-dim)] hover:text-[var(--nav-text)] hover:bg-[var(--nav-icon-hover)] transition-colors text-xs font-semibold cursor-pointer"
+            >
+              <span className="text-sm leading-none">
+                {language === "en" ? "🇬🇧" : language === "de" ? "🇦🇹" : language === "ur" ? "🇵🇰" : "🇨🇳"}
+              </span>
+              <span className="hidden sm:inline uppercase text-[10px] tracking-wider font-bold opacity-80">{language}</span>
+            </button>
+            {langOpen && (
+              <div className="absolute top-full right-0 mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-xl py-1 min-w-[170px] z-[100]">
+                {LANGUAGES.map(lang => (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => { setLanguage(lang.code); setLangOpen(false) }}
+                    className={cn(
+                      "w-full text-left flex items-center gap-2.5 px-3 py-2 text-xs transition-colors cursor-pointer",
+                      language === lang.code
+                        ? "text-[var(--primary)] font-semibold bg-[var(--primary-light)]"
+                        : "text-[var(--text-primary)] hover:bg-[var(--bg-page)]"
+                    )}
+                  >
+                    <span className="text-base leading-none">
+                      {lang.code === "en" ? "🇬🇧" : lang.code === "de" ? "🇦🇹" : lang.code === "ur" ? "🇵🇰" : "🇨🇳"}
+                    </span>
+                    <span className="flex-1">{lang.nativeLabel}</span>
+                    {language === lang.code && <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div ref={userRef} className="relative">
             <button type="button" onClick={() => setUserOpen(o => !o)} title={userName}
               className="w-7 h-7 bg-[var(--primary)] rounded-full flex items-center justify-center text-white text-[11px] font-bold hover:bg-[var(--primary-dark)] transition-colors cursor-pointer">
@@ -511,11 +565,11 @@ export default function TopNav() {
                 </div>
                 <Link href="/profile" onClick={() => setUserOpen(false)}
                   className="flex items-center gap-2 px-4 py-2 text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-page)] transition-colors">
-                  <UserCircle className="w-3.5 h-3.5" /> My Profile
+                  <UserCircle className="w-3.5 h-3.5" /> {t("nav.My Profile", "My Profile")}
                 </Link>
                 <button type="button" onClick={handleLogout}
                   className="w-full text-left flex items-center gap-2 px-4 py-2 text-[13px] text-[var(--danger)] hover:bg-[var(--bg-page)] transition-colors">
-                  <LogOut className="w-3.5 h-3.5" /> Sign out
+                  <LogOut className="w-3.5 h-3.5" /> {t("nav.Sign out", "Sign out")}
                 </button>
               </div>
             )}

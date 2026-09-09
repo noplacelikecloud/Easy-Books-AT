@@ -110,7 +110,7 @@ export default function Header({ onOpenMenu }: HeaderProps) {
                       : "text-white/70 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <span className="text-base leading-none">{lang.code === "en" ? "🇬🇧" : lang.code === "ur" ? "🇵🇰" : "🇨🇳"}</span>
+                  <span className="text-base leading-none">{lang.code === "en" ? "🇬🇧" : lang.code === "de" ? "🇦🇹" : lang.code === "ur" ? "🇵🇰" : "🇨🇳"}</span>
                   <span className="flex-1">{lang.nativeLabel}</span>
                   {language === lang.code && <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />}
                 </button>

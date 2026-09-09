@@ -26,9 +26,9 @@ def upgrade() -> None:
             sa.Column("tenant_id", sa.Integer(), nullable=False),
             sa.Column("code", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
             sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-            sa.Column("required", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+            sa.Column("required", sa.Boolean(), nullable=False, server_default=sa.false()),
             sa.Column("sort_order", sa.Integer(), nullable=False, server_default="0"),
-            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
             sa.CheckConstraint(
                 "sort_order >= 0 AND sort_order <= 2",
                 name="ck_dimension_sort_order",
@@ -87,7 +87,7 @@ def upgrade() -> None:
         bind.execute(
             sa.text(
                 "INSERT INTO analyticdimension (tenant_id, code, name, required, sort_order, is_active) "
-                "VALUES (:t, 'CC', 'Cost Center', 0, 0, 1)"
+                "VALUES (:t, 'CC', 'Cost Center', FALSE, 0, TRUE)"
             ),
             {"t": tenant_id},
         )

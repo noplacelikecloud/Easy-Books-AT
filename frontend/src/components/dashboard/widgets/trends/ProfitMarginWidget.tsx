@@ -1,11 +1,13 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { Line } from "react-chartjs-2"
 import type { ChartData } from "@/lib/dashboardWidgets"
 import { TrendShell } from "./common"
 
 /** Monthly net profit margin % — derived from the page's monthly rev/exp series. */
 export default function ProfitMarginWidget({ charts }: { charts: ChartData | null }) {
+  const { t, i18n } = useTranslation()
   const monthly = charts?.monthly ?? []
   const raw = monthly.map(m =>
     Number(m.revenue) > 0 ? (Number(m.profit) / Number(m.revenue)) * 100 : null
@@ -18,13 +20,13 @@ export default function ProfitMarginWidget({ charts }: { charts: ChartData | nul
 
   const labels = monthly.map(m => {
     const [y, mo] = m.month.split("-")
-    return new Date(+y, +mo - 1).toLocaleString("default", { month: "short" })
+    return new Date(+y, +mo - 1).toLocaleString(i18n.language === "de" ? "de-AT" : "en-US", { month: "short" })
   })
 
   const chartData = {
     labels,
     datasets: [{
-      label: "Margin %",
+      label: t('dashboard.marginPct', 'Margin %'),
       data: points,
       borderColor: "#7c3aed", backgroundColor: "rgba(124,58,237,0.10)",
       pointBackgroundColor: "#7c3aed", pointRadius: 3, pointHoverRadius: 5,
@@ -34,9 +36,9 @@ export default function ProfitMarginWidget({ charts }: { charts: ChartData | nul
 
   return (
     <TrendShell
-      title="Profit Margin" sub="Net profit as % of revenue, monthly"
-      href="/pl" linkLabel="P&L"
-      loading={!charts} error={false} empty={!hasActivity} emptyText="No revenue recorded yet."
+      title={t('widget.profit_margin', 'Profit Margin')} sub={t('dashboard.profitMarginSub', 'Net profit as % of revenue, monthly')}
+      href="/pl" linkLabel={t('dashboard.pl', 'P&L')}
+      loading={!charts} error={false} empty={!hasActivity} emptyText={t('dashboard.noRevenueYet', 'No revenue recorded yet.')}
     >
       <Line data={chartData} options={{
         responsive: true, maintainAspectRatio: false,
@@ -44,7 +46,7 @@ export default function ProfitMarginWidget({ charts }: { charts: ChartData | nul
           legend: { display: false },
           tooltip: { callbacks: { label: ctx => {
             const real = raw[ctx.dataIndex]
-            return ` ${(real ?? 0).toFixed(1)}%${real !== null && Math.abs(real) > CAP ? " (clipped)" : ""}`
+            return ` ${(real ?? 0).toFixed(1)}%${real !== null && Math.abs(real) > CAP ? t('dashboard.clipped', ' (clipped)') : ""}`
           } } },
         },
         scales: {

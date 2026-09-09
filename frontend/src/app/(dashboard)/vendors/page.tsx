@@ -90,9 +90,9 @@ export default function Vendors() {
 
   const handleDelete = async (v: Vendor) => {
     const ok = await confirm({
-      title: `Delete vendor "${v.name}"?`,
-      message: "This cannot be undone.",
-      confirmLabel: "Delete",
+      title: t('vendors.deleteConfirmTitle', `Delete vendor "${v.name}"?`, { name: v.name }),
+      message: t('common.cannotUndo', "This cannot be undone."),
+      confirmLabel: t('common.delete', "Delete"),
       danger: true,
     })
     if (!ok) return
@@ -110,11 +110,11 @@ export default function Vendors() {
 
   return (
     <div className="space-y-6">
-      <PrintHeader title="Vendors" />
+      <PrintHeader title={t('page.vendors', 'Vendors')} />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 print:hidden">
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold">Vendors</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Manage suppliers and track payables</p>
+          <h1 className="text-xl sm:text-3xl font-bold">{t('page.vendors', 'Vendors')}</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{t('vendors.subtitle', 'Manage suppliers and track payables')}</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <CsvImportButton entity="vendors" onSuccess={load} />
@@ -123,28 +123,28 @@ export default function Vendors() {
             className="flex items-center gap-2 px-4 py-2 border border-[var(--border)] rounded-lg text-sm font-bold hover:bg-[var(--bg-page)] transition-colors"
           >
             <Download className="w-4 h-4" />
-            Export
+            {t('common.export', 'Export')}
           </button>
           <button
             onClick={() => window.print()}
             className="flex items-center gap-2 px-4 py-2 border border-[var(--border)] rounded-lg text-sm font-bold hover:bg-[var(--bg-page)] transition-colors"
-            title="Print"
+            title={t('common.print', 'Print')}
           >
             <Printer className="w-4 h-4" />{t('common.print', 'Print')}</button>
           <button onClick={openAdd} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-dark)]">
             <Plus className="w-4 h-4" />
-            Add Vendor
+            {t('vendors.addVendor', 'Add Vendor')}
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white rounded-lg border border-[var(--border)] p-6">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Total Vendors</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('vendors.totalVendors', 'Total Vendors')}</p>
           <p className="text-2xl font-bold text-[var(--primary)] mt-2">{total}</p>
         </div>
         <div className="bg-white rounded-lg border border-[var(--border)] p-6">
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">Closing Balance Total</p>
+          <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{t('vendors.closingBalanceTotal', 'Closing Balance Total')}</p>
           <p className="text-2xl font-bold text-[var(--text-primary)] mt-2">{fmt(closingTotal)}</p>
         </div>
       </div>
@@ -153,7 +153,7 @@ export default function Vendors() {
         <Search className="absolute left-3 top-3 w-4 h-4 text-[var(--text-muted)]" />
         <input
           type="text"
-          placeholder="Search vendors..."
+          placeholder={t('vendors.searchPlaceholder', 'Search vendors...')}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
@@ -172,10 +172,10 @@ export default function Vendors() {
                   onChange={e => setSelectedIds(e.target.checked ? new Set(vendors.map(v => v.id)) : new Set())}
                 />
               </th>
-              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Name</th>
-              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Email</th>
-              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Phone</th>
-              <th className="ui-th text-right text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Closing Bal.</th>
+              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.name', 'Name')}</th>
+              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.email', 'Email')}</th>
+              <th className="ui-th text-left text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.phone', 'Phone')}</th>
+              <th className="ui-th text-right text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.closingBal', 'Closing Bal.')}</th>
               <th className="ui-th text-center text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('col.status', 'Status')}</th>
               <th className="ui-th"></th>
             </tr>
@@ -188,9 +188,9 @@ export default function Vendors() {
                 <td colSpan={7} className="px-6 py-16 text-center">
                   <div className="inline-flex flex-col items-center gap-3">
                     <Truck className="w-10 h-10 text-[var(--border)]" />
-                    <p className="text-sm text-[var(--text-muted)] font-medium">No vendors yet</p>
+                    <p className="text-sm text-[var(--text-muted)] font-medium">{t('vendors.noVendors', 'No vendors yet')}</p>
                     <button onClick={openAdd} className="px-4 py-2 bg-[var(--primary)] text-white text-sm font-medium rounded-lg hover:bg-[var(--primary-dark)] transition-colors">
-                      + Add Vendor
+                      + {t('vendors.addVendor', 'Add Vendor')}
                     </button>
                   </div>
                 </td>
@@ -201,27 +201,25 @@ export default function Vendors() {
                   <input type="checkbox"
                     className="rounded border-[var(--border)] accent-[var(--primary)]"
                     checked={selectedIds.has(v.id)}
-                    onChange={e => setSelectedIds(prev => {
-                      const next = new Set(prev)
-                      e.target.checked ? next.add(v.id) : next.delete(v.id)
-                      return next
-                    })}
+                    onChange={e => {
+                      const next = new Set(selectedIds)
+                      if (e.target.checked) next.add(v.id); else next.delete(v.id)
+                      setSelectedIds(next)
+                    }}
                   />
                 </td>
-                <td className="ui-td font-medium">
-                  <DocLink type="vendor" id={v.id} label={v.name} className="font-medium" />
-                </td>
-                <td className="ui-td text-[var(--text-muted)]">{v.email ?? '—'}</td>
-                <td className="ui-td text-[var(--text-muted)]">{v.phone ?? '—'}</td>
-                <td className="ui-td text-right font-mono">{fmt(bal(v))}</td>
+                <td className="ui-td font-semibold"><DocLink type="vendor" id={v.id} label={v.name} /></td>
+                <td className="ui-td text-[var(--text-muted)]">{v.email || "—"}</td>
+                <td className="ui-td text-[var(--text-muted)]">{v.phone || "—"}</td>
+                <td className="ui-td text-right font-mono font-medium">{fmt(bal(v))}</td>
                 <td className="ui-td text-center">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${v.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-                    {v.is_active ? 'active' : 'inactive'}
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${v.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>
+                    {v.is_active !== false ? t('status.active', 'Active') : t('status.inactive', 'Inactive')}
                   </span>
                 </td>
                 <td className="ui-td flex items-center gap-3">
-                  <Link href={`/vendors/${v.id}`} className="text-[var(--primary)] text-sm font-bold hover:underline">View</Link>
-                  <button onClick={() => router.push(`/vendors/${v.id}/edit`)} className="text-[var(--primary)] text-sm font-bold hover:underline">Edit</button>
+                  <Link href={`/vendors/${v.id}`} className="text-[var(--primary)] text-sm font-bold hover:underline">{t('common.view', 'View')}</Link>
+                  <button onClick={() => router.push(`/vendors/${v.id}/edit`)} className="text-[var(--primary)] text-sm font-bold hover:underline">{t('common.edit', 'Edit')}</button>
                   <button onClick={() => handleDelete(v)} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                 </td>
               </tr>
@@ -233,9 +231,9 @@ export default function Vendors() {
         {/* Mobile card list */}
         <div className="md:hidden divide-y divide-[var(--border)]">
           {isLoading ? (
-            <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">Loading…</div>
+            <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">{t('common.loading', 'Loading…')}</div>
           ) : vendors.length === 0 ? (
-            <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">No vendors yet</div>
+            <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">{t('vendors.noVendors', 'No vendors yet')}</div>
           ) : vendors.map(v => (
             <Link
               key={v.id}

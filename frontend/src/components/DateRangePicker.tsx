@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Calendar } from "lucide-react"
 import { useSettings } from "@/context/SettingsContext"
 import { fmtDate } from "@/lib/utils"
@@ -19,8 +20,10 @@ interface DateRangePickerProps {
 }
 
 export default function DateRangePicker({
-  start, end, onStartChange, onEndChange, label = "Period", hideAll = false,
+  start, end, onStartChange, onEndChange, label, hideAll = false,
 }: DateRangePickerProps) {
+  const { t } = useTranslation()
+  const displayLabel = label ?? t('common.period', 'Period')
   const { settings } = useSettings()
   const opts = useMemo(() => ({
     fiscalStartMonth: fiscalStartMonthFromSetting(settings.fiscal_year_start),
@@ -48,7 +51,7 @@ export default function DateRangePicker({
     "focus:ring-2 focus:ring-[var(--primary)] disabled:opacity-60 disabled:cursor-not-allowed " +
     "min-w-0 max-w-full"
   const hint =
-    selected === "all" ? "All dates"
+    selected === "all" ? t('common.allDates', 'All dates')
     : start && end ? `${fmtDate(start)} – ${fmtDate(end)}`
     : ""
   const showCustomDates = selected === "custom"
@@ -57,16 +60,16 @@ export default function DateRangePicker({
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 w-full">
       <div className="flex items-center gap-1.5 shrink-0">
         <Calendar className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-        <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{label}</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{displayLabel}</span>
       </div>
       <select
         value={selected}
         onChange={(e) => pick(e.target.value as PresetId)}
         className={inputCls + " flex-1 min-w-[8rem] sm:flex-none sm:min-w-[10rem]"}
-        aria-label={label}
+        aria-label={displayLabel}
       >
         {presets.map((p) => (
-          <option key={p.id} value={p.id}>{p.label}</option>
+          <option key={p.id} value={p.id}>{t(`preset.${p.id}`, p.label)}</option>
         ))}
       </select>
       {/* Custom From/To — hide on sm when a preset is selected (hint shows range) */}
@@ -81,14 +84,14 @@ export default function DateRangePicker({
           type="date" value={start} disabled={!showCustomDates}
           onChange={(e) => onStartChange(e.target.value)}
           className={inputCls + " flex-1 min-w-0 sm:flex-none"}
-          aria-label="From date"
+          aria-label={t('common.fromDate', 'From date')}
         />
-        <span className="text-[var(--text-muted)] text-xs shrink-0">to</span>
+        <span className="text-[var(--text-muted)] text-xs shrink-0">{t('common.to', 'to')}</span>
         <input
           type="date" value={end} disabled={!showCustomDates}
           onChange={(e) => onEndChange(e.target.value)}
           className={inputCls + " flex-1 min-w-0 sm:flex-none"}
-          aria-label="To date"
+          aria-label={t('common.toDate', 'To date')}
         />
       </div>
       {hint && (

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Line } from "react-chartjs-2"
 import { useFmtCompact } from "@/context/SettingsContext"
 import { monthLabel } from "@/lib/dashboardTrends"
@@ -13,6 +14,7 @@ const RANGES: { key: RangeKey; months: number | null }[] = [
 
 /** Month-end AR total vs AP total balances with a timeline selector. */
 export default function ArApTrendWidget() {
+  const { t } = useTranslation()
   const fmt = useFmtCompact()
   const { data, error } = useTrends()
   const [range, setRange] = useState<RangeKey>("1Y")
@@ -30,12 +32,12 @@ export default function ArApTrendWidget() {
     labels: months.map(monthLabel),
     datasets: [
       {
-        label: "Receivables (AR)", data: ar,
+        label: t('dashboard.receivablesAr', 'Receivables (AR)'), data: ar,
         borderColor: "#16a34a", backgroundColor: "rgba(22,163,74,0.10)",
         pointRadius: 2, pointHoverRadius: 5, borderWidth: 2, tension: 0.3, fill: true,
       },
       {
-        label: "Payables (AP)", data: ap,
+        label: t('dashboard.payablesAp', 'Payables (AP)'), data: ap,
         borderColor: "#ea580c", backgroundColor: "#ea580c",
         pointRadius: 2, pointHoverRadius: 5, borderWidth: 2, tension: 0.3,
       },
@@ -50,23 +52,23 @@ export default function ArApTrendWidget() {
     <div className="h-full flex flex-col bg-white border border-[var(--border)] rounded-xl p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/55">AR vs AP Trend</p>
-          <p className="text-[10px] text-[var(--text-primary)]/40 mt-0.5">Month-end receivable vs payable balances</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/55">{t('widget.ar_ap_trend', 'AR vs AP Trend')}</p>
+          <p className="text-[10px] text-[var(--text-primary)]/40 mt-0.5">{t('dashboard.arApTrendSub', 'Month-end receivable vs payable balances')}</p>
         </div>
         <div className="flex gap-1 flex-shrink-0">
           {RANGES.map(r => (
             <button key={r.key} onClick={() => setRange(r.key)} className={`${btnBase} ${range === r.key ? btnActive : btnInactive}`}>
-              {r.key}
+              {r.key === "All" ? t('dashboard.rangeAll', 'All') : r.key}
             </button>
           ))}
         </div>
       </div>
       {error ? (
-        <div className="text-sm text-red-600">Failed to load.</div>
+        <div className="text-sm text-red-600">{t('common.failedToLoad', 'Failed to load.')}</div>
       ) : !data ? (
         <div className="shimmer flex-1 rounded-lg" />
       ) : !hasActivity ? (
-        <div className="flex-1 flex items-center justify-center text-sm text-[var(--text-primary)]/40">No AR/AP activity yet.</div>
+        <div className="flex-1 flex items-center justify-center text-sm text-[var(--text-primary)]/40">{t('dashboard.noArApActivity', 'No AR/AP activity yet.')}</div>
       ) : (
         <div className="flex-1 min-h-0">
           <Line data={chartData} options={moneyLineOpts(fmt, true)} />

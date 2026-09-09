@@ -25,7 +25,7 @@ def upgrade():
             sa.Column("open_time", sa.String(), nullable=False, server_default="08:00"),
             sa.Column("close_time", sa.String(), nullable=False, server_default="20:00"),
             sa.Column("shift_hours", sa.Integer(), nullable=False, server_default="4"),
-            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
             sa.Column("created_at", sa.DateTime(), nullable=False),
         )
 
@@ -38,7 +38,7 @@ def upgrade():
             sa.Column("code", sa.String(), nullable=False),
             sa.Column("name", sa.String(), nullable=False),
             sa.Column("status", sa.String(), nullable=False, server_default="available"),
-            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
             sa.Column("created_at", sa.DateTime(), nullable=False),
             sa.UniqueConstraint("tenant_id", "code", name="uq_hc_dialysis_machine_code"),
         )
@@ -54,7 +54,7 @@ def upgrade():
             sa.Column("start_time", sa.String(), nullable=False),
             sa.Column("end_time", sa.String(), nullable=False),
             sa.Column("sort_order", sa.Integer(), nullable=False, server_default="0"),
-            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
             sa.UniqueConstraint("tenant_id", "unit_id", "code", name="uq_hc_dialysis_shift_code"),
         )
 

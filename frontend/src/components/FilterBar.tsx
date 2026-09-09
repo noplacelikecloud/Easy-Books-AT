@@ -1,6 +1,7 @@
 'use client'
 
 import { Search, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export interface FilterBarProps {
   search: string
@@ -19,8 +20,9 @@ export default function FilterBar({
   search, onSearch,
   statuses, status, onStatus,
   dateFrom, dateTo, onDateFrom, onDateTo,
-  placeholder = 'Search…',
+  placeholder,
 }: FilterBarProps) {
+  const { t } = useTranslation()
   const hasFilters = !!status || !!dateFrom || !!dateTo
 
   return (
@@ -32,7 +34,7 @@ export default function FilterBar({
           type="text"
           value={search}
           onChange={e => onSearch(e.target.value)}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('common.searchPlaceholder', 'Search…')}
           className="w-full pl-8 sm:pl-9 pr-3 py-1.5 sm:py-2 border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
         {search && (
@@ -49,9 +51,9 @@ export default function FilterBar({
           onChange={e => onStatus(e.target.value)}
           className="w-full sm:w-auto px-2 sm:px-3 py-1.5 sm:py-2 border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] bg-white sm:max-w-none"
         >
-          <option value="">All statuses</option>
+          <option value="">{t('common.allStatuses', 'All statuses')}</option>
           {statuses.map(s => (
-            <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+            <option key={s} value={s}>{t(`status.${s}`, s.charAt(0).toUpperCase() + s.slice(1))}</option>
           ))}
         </select>
       )}
@@ -81,7 +83,7 @@ export default function FilterBar({
           onClick={() => { onStatus?.(''); onDateFrom?.(''); onDateTo?.('') }}
           className="flex items-center gap-1 text-xs text-[var(--primary)] hover:text-[#8a6d2e] font-medium"
         >
-          <X className="w-3 h-3" /> Clear
+          <X className="w-3 h-3" /> {t('common.clear', 'Clear')}
         </button>
       )}
     </div>

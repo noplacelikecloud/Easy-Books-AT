@@ -35,7 +35,17 @@ def upgrade() -> None:
         # for existing DBs. create_all / fresh installs get the model UniqueConstraint.
 
     # Backfill one membership per existing user (idempotent).
-    users = bind.execute(sa.text("SELECT id, tenant_id, role FROM user")).fetchall()
+    # ``user`` is a PostgreSQL keyword.  Build the SELECT through SQLAlchemy so
+    # the identifier is quoted on PostgreSQL while remaining valid on SQLite.
+    user_table = sa.table(
+        "user",
+        sa.column("id", sa.Integer()),
+        sa.column("tenant_id", sa.Integer()),
+        sa.column("role", sa.String()),
+    )
+    users = bind.execute(
+        sa.select(user_table.c.id, user_table.c.tenant_id, user_table.c.role)
+    ).fetchall()
     for uid, tid, role in users:
         exists = bind.execute(
             sa.text(

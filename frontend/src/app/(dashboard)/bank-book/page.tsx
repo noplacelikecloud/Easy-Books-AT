@@ -114,15 +114,11 @@ export default function BankBookPage() {
   const selectedBank = banks.find(b => b.id === selectedId)
   const hasCoa = selectedBank?.coa_account_id != null
 
-  const pageTitle = selectedBank
-    ? `Bank Book — ${selectedBank.name}${selectedBank.bank_name ? ` (${selectedBank.bank_name})` : ""}`
-    : "Bank Book"
-
   return (
     <div>
       <PrintHeader
-        title={pageTitle}
-        subtitle={`Period: ${start} — ${end}`}
+        title={selectedBank ? `${t('page.bankBook', 'Bank Book')} — ${selectedBank.name}` : t('page.bankBook', 'Bank Book')}
+        subtitle={`${t('common.period', 'Period')}: ${start} — ${end}`}
       />
 
       {/* Page title */}
@@ -130,9 +126,9 @@ export default function BankBookPage() {
         <div className="flex items-center gap-3">
           <Landmark className="w-5 h-5 text-[var(--primary)]" />
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">Bank Book</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{t('page.bankBook', 'Bank Book')}</h1>
             <p className="text-xs text-[var(--text-primary)]/55">
-              Voucher-aware ledger view of bank account transactions
+              {t('reports.bankBookSub', 'Voucher-aware ledger view of bank account transactions')}
             </p>
           </div>
         </div>
@@ -147,7 +143,7 @@ export default function BankBookPage() {
             }}
             disabled={!ledgerData}
             className="p-2.5 bg-white border border-[var(--border)] rounded-lg hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60 disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Export CSV"
+            title={t('common.exportCsv', 'Export CSV')}
           >
             <Download className="w-4 h-4" />
           </button>
@@ -155,7 +151,7 @@ export default function BankBookPage() {
             onClick={() => window.print()}
             disabled={!ledgerData}
             className="p-2.5 bg-white border border-[var(--border)] rounded-lg hover:bg-[var(--bg-page)] transition-colors text-[var(--text-primary)]/60 disabled:opacity-30 disabled:cursor-not-allowed"
-            title={!ledgerData ? "No data to print" : "Print Bank Book"}
+            title={!ledgerData ? t('common.noDataYet', 'No data to print') : t('common.print', 'Print Bank Book')}
           >
             <Printer className="w-4 h-4" />
           </button>
@@ -169,7 +165,7 @@ export default function BankBookPage() {
         {banks.length > 0 && (
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 mb-1">
-              Bank Account
+              {t('common.bankAccount', 'Bank Account')}
             </label>
             <select
               value={selectedId ?? ""}
@@ -194,14 +190,14 @@ export default function BankBookPage() {
         {ledgerData && ledgerData.entries.length > 0 && (
           <div className="flex items-center gap-3">
             <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)]/55 whitespace-nowrap">
-              Voucher Type
+              {t('common.voucherType', 'Voucher Type')}
             </label>
             <select
               value={voucherFilter}
               onChange={e => setVoucherFilter(e.target.value)}
               className="px-3 py-1.5 border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[var(--primary)] bg-white"
             >
-              <option value="">All vouchers</option>
+              <option value="">{t('common.allTypes', 'All vouchers')}</option>
               {Object.entries(VOUCHER_TYPES).map(([code, label]) => (
                 <option key={code} value={code}>{code} — {label}</option>
               ))}
@@ -233,7 +229,7 @@ export default function BankBookPage() {
       {!initLoading && !loadError && banks.length === 0 && (
         <div className="bg-white border border-[var(--border)] rounded-xl py-20 text-center">
           <Landmark className="w-10 h-10 text-[var(--primary)]/40 mx-auto mb-3" />
-          <p className="text-sm font-medium text-[var(--text-primary)]/50">No bank accounts found</p>
+          <p className="text-sm font-medium text-[var(--text-primary)]/50">{t('dashboard.noBankAccounts', 'No bank accounts found')}</p>
           <p className="text-xs text-[var(--text-primary)]/35 mt-1">
             Add a bank account via{" "}
             <a href="/bank-accounts" className="text-[var(--primary)] hover:underline">
@@ -271,9 +267,7 @@ export default function BankBookPage() {
       {!initLoading && !loadError && hasCoa && !isLoading && !ledgerData && (
         <div className="bg-white border border-[var(--border)] rounded-xl py-12 text-center">
           <p className="text-sm text-[var(--text-primary)]/50">
-            No transactions for{" "}
-            <span className="font-semibold text-[var(--text-primary)]/70">{selectedBank?.name}</span>{" "}
-            in the selected period.
+            {t('reports.noTxForAccount', { code: selectedBank?.name ?? "", defaultValue: `No transactions for ${selectedBank?.name} in the selected period.` })}
           </p>
         </div>
       )}

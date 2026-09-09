@@ -88,10 +88,10 @@ def upgrade() -> None:
     if bind.dialect.name == "sqlite":
         _sqlite_rebuild(bind, _NEW_CHECK)
     else:
-        try:
+        insp = sa.inspect(bind)
+        ck_names = {ck["name"] for ck in insp.get_check_constraints("tenant")}
+        if "ck_tenant_business_model" in ck_names:
             op.drop_constraint("ck_tenant_business_model", "tenant", type_="check")
-        except Exception:
-            pass
         op.create_check_constraint("ck_tenant_business_model", "tenant", _NEW_CHECK)
 
     m = _money()
@@ -103,7 +103,7 @@ def upgrade() -> None:
         sa.Column("blend", sa.String, nullable=True),
         sa.Column("width", sa.String, nullable=True),
         sa.Column("unit", sa.String, nullable=False, server_default="MTR"),
-        sa.Column("is_active", sa.Boolean, nullable=False, server_default="1"),
+        sa.Column("is_active", sa.Boolean, nullable=False, server_default=sa.true()),
         sa.Column("created_at", sa.DateTime, nullable=False),
         sa.UniqueConstraint("tenant_id", "code", name="uq_tp_quality_code"),
     ])
@@ -113,10 +113,10 @@ def upgrade() -> None:
         sa.Column("seq", sa.Integer, nullable=False, server_default="0", index=True),
         sa.Column("code", sa.String, nullable=False, index=True),
         sa.Column("name", sa.String, nullable=False),
-        sa.Column("is_billing", sa.Boolean, nullable=False, server_default="1"),
+        sa.Column("is_billing", sa.Boolean, nullable=False, server_default=sa.true()),
         sa.Column("default_sale_rate", m, nullable=False, server_default="0"),
         sa.Column("contractor_expense_account_id", sa.Integer, nullable=True),
-        sa.Column("is_active", sa.Boolean, nullable=False, server_default="1"),
+        sa.Column("is_active", sa.Boolean, nullable=False, server_default=sa.true()),
         sa.Column("created_at", sa.DateTime, nullable=False),
         sa.UniqueConstraint("tenant_id", "code", name="uq_tp_process_code"),
     ])
@@ -128,7 +128,7 @@ def upgrade() -> None:
         sa.Column("vendor_id", sa.Integer, nullable=False, index=True),
         sa.Column("default_process_id", sa.Integer, nullable=True),
         sa.Column("phone", sa.String, nullable=True),
-        sa.Column("is_active", sa.Boolean, nullable=False, server_default="1"),
+        sa.Column("is_active", sa.Boolean, nullable=False, server_default=sa.true()),
         sa.Column("created_at", sa.DateTime, nullable=False),
         sa.UniqueConstraint("tenant_id", "code", name="uq_tp_contractor_code"),
     ])
@@ -426,8 +426,8 @@ def downgrade() -> None:
     if bind.dialect.name == "sqlite":
         _sqlite_rebuild(bind, _OLD_CHECK)
     else:
-        try:
+        insp = sa.inspect(bind)
+        ck_names = {ck["name"] for ck in insp.get_check_constraints("tenant")}
+        if "ck_tenant_business_model" in ck_names:
             op.drop_constraint("ck_tenant_business_model", "tenant", type_="check")
-        except Exception:
-            pass
         op.create_check_constraint("ck_tenant_business_model", "tenant", _OLD_CHECK)

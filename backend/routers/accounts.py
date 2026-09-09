@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from models import Account, JournalEntry
@@ -273,16 +274,31 @@ def delete_account(account_id: int, session: SessionDep, user: WriteUserDep):
     ).first()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
-    if session.exec(select(JournalEntry).where(JournalEntry.account_id == account_id)).first():
+
+    if account_has_children(session, user.tenant_id, account.id):
         raise HTTPException(
-            status_code=400, detail="Cannot delete account with existing journal entries"
+            status_code=400,
+            detail="Cannot delete account or category because it has sub-accounts. Please delete or reassign sub-accounts first.",
         )
+
+    if account_has_postings(session, user.tenant_id, account.id):
+        raise HTTPException(
+            status_code=400, detail="Cannot delete account with existing journal entries."
+        )
+
     log_audit(
         session, user, "DELETE", "account", account.id,
         {"code": account.code, "name": account.name},
     )
-    session.delete(account)
-    session.commit()
+    try:
+        session.delete(account)
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete account because it is referenced by other records (e.g. products, bank accounts, or system settings).",
+        )
     return {"success": True}
 
 

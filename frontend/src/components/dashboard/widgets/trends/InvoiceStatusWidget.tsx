@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslation } from "react-i18next"
 import { Doughnut } from "react-chartjs-2"
 import { useFmt } from "@/context/SettingsContext"
 import { TrendShell, doughnutOpts, useTrends } from "./common"
@@ -14,6 +15,7 @@ const STATUS_ORDER = ["draft", "sent", "posted", "partial", "paid", "overdue", "
 
 /** Invoice pipeline: outstanding amount by document status. */
 export default function InvoiceStatusWidget() {
+  const { t } = useTranslation()
   const fmt = useFmt()
   const { data, error } = useTrends()
 
@@ -23,7 +25,7 @@ export default function InvoiceStatusWidget() {
   const totalCount = rows.reduce((n, r) => n + r.count, 0)
 
   const chartData = {
-    labels: rows.map(r => `${r.status} (${r.count})`),
+    labels: rows.map(r => `${t('status.' + r.status, r.status)} (${r.count})`),
     datasets: [{
       data: rows.map(r => Number(r.amount)),
       backgroundColor: rows.map(r => STATUS_COLORS[r.status] ?? "#a8a29e"),
@@ -33,9 +35,10 @@ export default function InvoiceStatusWidget() {
 
   return (
     <TrendShell
-      title="Invoice Pipeline" sub={`Amount by status · ${totalCount} invoice${totalCount === 1 ? "" : "s"}`}
-      href="/invoices" linkLabel="Invoices"
-      loading={!data} error={error} empty={rows.length === 0} emptyText="No invoices yet."
+      title={t('widget.invoice_pipeline', 'Invoice Pipeline')}
+      sub={t('dashboard.invoicePipelineSub', { count: totalCount, defaultValue: `Amount by status · ${totalCount} invoices` })}
+      href="/invoices" linkLabel={t('nav.invoices', 'Invoices')}
+      loading={!data} error={error} empty={rows.length === 0} emptyText={t('dashboard.noInvoicesYet', 'No invoices yet.')}
     >
       <Doughnut data={chartData} options={doughnutOpts(fmt)} />
     </TrendShell>

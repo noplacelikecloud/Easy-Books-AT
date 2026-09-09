@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { apiFetch } from "@/lib/api"
 import { fmtDate } from "@/lib/utils"
+import { useTranslation } from "react-i18next"
 
 interface JournalRow {
   transaction_id: number
@@ -18,20 +19,21 @@ interface JournalRow {
 
 type ColKey = "voucher" | "date" | "account" | "narration" | "amount"
 
-const ALL_COLUMNS: { key: ColKey; label: string; fixed?: boolean }[] = [
-  { key: "date", label: "Date", fixed: true },
-  { key: "voucher", label: "Voucher No" },
-  { key: "account", label: "Account" },
-  { key: "narration", label: "Narration" },
-  { key: "amount", label: "Amount", fixed: true },
-]
-
 function fmtAmount(n: number): string {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 export default function RecentTransactions() {
+  const { t } = useTranslation()
   const [rows, setRows] = useState<JournalRow[] | null>(null)
+
+  const ALL_COLUMNS: { key: ColKey; label: string; fixed?: boolean }[] = [
+    { key: "date", label: t('common.date', 'Date'), fixed: true },
+    { key: "voucher", label: t('journal.voucherNo', 'Voucher No') },
+    { key: "account", label: t('col.account', 'Account') },
+    { key: "narration", label: t('common.description', 'Narration') },
+    { key: "amount", label: t('common.amount', 'Amount'), fixed: true },
+  ]
 
   const STORAGE_KEY = "eb.recentTx.cols"
   const [hidden, setHidden] = useState<Set<ColKey>>(new Set())
@@ -74,12 +76,12 @@ export default function RecentTransactions() {
   return (
     <div className="bg-white rounded-xl border border-[var(--border)] shadow-sm overflow-hidden">
       <div className="px-5 py-3.5 border-b border-[var(--border)] flex items-center justify-between gap-3">
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/55">Recent Transactions</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)]/55">{t('dashboard.recentTransactions', 'Recent Transactions')}</p>
         <div className="flex items-center gap-3">
           <div className="relative">
             <button onClick={() => setMenuOpen(o => !o)}
               className="text-[11px] text-[var(--text-primary)]/55 font-semibold hover:text-[var(--text-primary)] border border-[var(--border)] rounded-lg px-2 py-1">
-              Columns ▾
+              {t('common.columns', 'Columns')} ▾
             </button>
             {menuOpen && (
               <div className="absolute right-0 mt-1 z-10 bg-white border border-[var(--border)] rounded-lg shadow-lg p-2 min-w-[160px]">
@@ -92,24 +94,24 @@ export default function RecentTransactions() {
               </div>
             )}
           </div>
-          <Link href="/journal" className="text-[11px] text-[var(--primary)] font-semibold hover:text-[#8a6d2e]">View all →</Link>
+          <Link href="/journal" className="text-[11px] text-[var(--primary)] font-semibold hover:text-[#8a6d2e]">{t('common.viewAll', 'View all')} →</Link>
         </div>
       </div>
       <div className="px-5 py-2.5 border-b border-[var(--border)] flex flex-wrap items-center gap-2">
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search voucher, account, narration…"
+          placeholder={t('common.searchVoucherPlaceholder', 'Search voucher, account, narration…')}
           className="flex-1 min-w-[160px] text-xs border border-[var(--border)] rounded-lg px-2.5 py-1.5 bg-[var(--bg-page)] outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
         <select value={vtypeFilter} onChange={e => setVtypeFilter(e.target.value)}
           className="text-xs border border-[var(--border)] rounded-lg px-2 py-1.5 bg-[var(--bg-page)] outline-none">
-          <option value="">All types</option>
+          <option value="">{t('common.allTypes', 'All types')}</option>
           {present.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
         <button onClick={() => setNewestFirst(v => !v)}
           className="text-xs border border-[var(--border)] rounded-lg px-2.5 py-1.5 text-[var(--text-primary)]/70 hover:bg-[#faf8f4]">
-          Date {newestFirst ? "↓" : "↑"}
+          {t('common.date', 'Date')} {newestFirst ? "↓" : "↑"}
         </button>
       </div>
       <div className="overflow-x-auto">
@@ -118,7 +120,7 @@ export default function RecentTransactions() {
             {[...Array(5)].map((_, i) => <div key={i} className="flex gap-3"><div className="shimmer h-4 w-20 rounded" /><div className="shimmer h-4 w-24 rounded" /><div className="shimmer h-4 flex-1 rounded" /></div>)}
           </div>
         ) : shown.length === 0 ? (
-          <div className="px-5 py-8 text-center text-[var(--text-primary)]/40 text-sm">No transactions for this period.</div>
+          <div className="px-5 py-8 text-center text-[var(--text-primary)]/40 text-sm">{t('journal.noEntries', 'No transactions for this period.')}</div>
         ) : (
           <table className="w-full text-left min-w-[560px]">
             <thead>

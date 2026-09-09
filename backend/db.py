@@ -13,13 +13,15 @@ if DATABASE_URL:
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
     if "sslmode" not in DATABASE_URL and DATABASE_URL.startswith("postgresql://"):
-        sep = "&" if "?" in DATABASE_URL else "?"
-        DATABASE_URL = f"{DATABASE_URL}{sep}sslmode=require"
+        is_local = any(h in DATABASE_URL for h in ("@postgres:", "@postgres/", "@localhost:", "@localhost/", "@127.0.0.1:"))
+        if not is_local:
+            sep = "&" if "?" in DATABASE_URL else "?"
+    _on_vercel = os.environ.get("VERCEL", "").lower() in ("1", "true")
     engine = create_engine(
         DATABASE_URL,
         pool_pre_ping=True,
-        pool_size=1,
-        max_overflow=0,
+        pool_size=1 if _on_vercel else int(os.environ.get("DB_POOL_SIZE", "10")),
+        max_overflow=0 if _on_vercel else int(os.environ.get("DB_MAX_OVERFLOW", "20")),
     )
 else:
     _environment = (

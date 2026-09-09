@@ -83,10 +83,10 @@ def upgrade() -> None:
             bind.execute(sa.text("CREATE INDEX IF NOT EXISTS ix_user_alert_kind ON user_alert (kind)"))
             bind.execute(sa.text("CREATE INDEX IF NOT EXISTS ix_user_alert_dedupe_key ON user_alert (dedupe_key)"))
     else:
-        try:
+        insp = sa.inspect(bind)
+        ck_names = {ck["name"] for ck in insp.get_check_constraints("user_alert")}
+        if "ck_user_alert_kind" in ck_names:
             op.drop_constraint("ck_user_alert_kind", "user_alert", type_="check")
-        except Exception:
-            pass
         op.create_check_constraint(
             "ck_user_alert_kind",
             "user_alert",

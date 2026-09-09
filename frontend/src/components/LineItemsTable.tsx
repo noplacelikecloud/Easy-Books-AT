@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Trash2, Plus } from "lucide-react"
 import { apiFetch } from "@/lib/api"
 import { useFmt, useCurrency } from "@/context/SettingsContext"
+import { useTranslation } from "react-i18next"
 
 export interface LineItem {
   product_id?: number | null
@@ -74,6 +75,7 @@ function calcAmount(qty: number, rate: number, discountPct = 0) {
 }
 
 export default function LineItemsTable({ lines, onChange, products = [], taxCodes = [], taxTreatments = [], showTax = false, readOnly = false, showStockHint = false, warnOversell = false, customerId = null, priceKind = 'sale', hideDiscount = false }: Props) {
+  const { t }    = useTranslation()
   const fmt      = useFmt()
   const currency = useCurrency()
   const [hints, setHints] = useState<Record<number, { rate: number; date: string; scope: string; party_name: string | null } | null>>({})
@@ -108,23 +110,29 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
       setHints(h => ({ ...h, [idx]: null }))
       return
     }
-    const prod = products.find(p => p.id === Number(productId))
-    if (!prod) return
-    const amount = calcAmount(lines[idx].qty, prod.default_rate, lines[idx].discount_pct ?? 0)
-    const unitSsp = prod.standalone_selling_price != null ? Number(prod.standalone_selling_price) : null
-    const lineSsp = unitSsp != null ? Math.round(lines[idx].qty * unitSsp * 100) / 100 : null
-    onChange(lines.map((l, i) =>
-      i === idx
-        ? { ...l, product_id: prod.id, description: prod.name, unit: prod.unit, rate: prod.default_rate, amount, ssp: lineSsp }
-        : l
-    ))
-    // Fetch last-price hint for this product + party
-    const qs = new URLSearchParams({ kind: priceKind })
-    if (customerId) qs.set('customer_id', String(customerId))
-    apiFetch<{ rate: number | null; date: string | null; scope: string | null; party_name: string | null }>(
-      `/api/products/${prod.id}/last-price?${qs}`
-    ).then(r => setHints(h => ({ ...h, [idx]: r.rate != null ? { rate: r.rate, date: r.date!, scope: r.scope!, party_name: r.party_name ?? null } : null })))
-     .catch(() => {})
+    const pid = Number(productId)
+    const p = products.find(x => x.id === pid)
+    if (!p) return
+
+    // Pre-fill fields from product catalog
+    const patch: Partial<LineItem> = {
+      product_id: p.id,
+      description: p.name,
+      rate: p.default_rate,
+      unit: p.unit || "pcs",
+      ssp: p.standalone_selling_price ?? null,
+    }
+
+    update(idx, patch)
+
+    // Fetch customer/vendor last price hint if customerId provided
+    if (customerId) {
+      apiFetch<{ rate: number; date: string; scope: string; party_name: string | null }>(
+        `/api/products/${p.id}/price-hint?party_id=${customerId}&kind=${priceKind}`
+      )
+        .then(h => setHints(prev => ({ ...prev, [idx]: h })))
+        .catch(() => {})
+    }
   }
 
   const subtotal = lines.reduce((s, l) => s + l.amount, 0)
@@ -150,22 +158,22 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
           <thead className="bg-[var(--bg-page)]">
             <tr>
               {hasProducts && (
-                <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] min-w-[160px] w-[18%]">Product</th>
+                <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] min-w-[160px] w-[18%]">{t('lineItems.product', 'Product')}</th>
               )}
-              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] min-w-[200px] w-[28%]">Description</th>
-              <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-28">Qty</th>
-              <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-20">Unit</th>
-              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-32">Rate ({currency})</th>
+              <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] min-w-[200px] w-[28%]">{t('lineItems.description', 'Description')}</th>
+              <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-28">{t('lineItems.qty', 'Qty')}</th>
+              <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-20">{t('lineItems.unit', 'Unit')}</th>
+              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-32">{t('lineItems.rate', 'Rate')} ({currency})</th>
               {!hideDiscount && (
-                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-20">Disc %</th>
+                <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-20">{t('lineItems.discPct', 'Disc %')}</th>
               )}
               {hasTax && (
-                <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-40">Tax</th>
+                <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-40">{t('lineItems.tax', 'Tax')}</th>
               )}
               {hasTaxTreatment && (
-                <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] min-w-56">AT-Steuerbehandlung</th>
+                <th className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] min-w-56">{t('col.taxTreatment', 'AT-Steuerbehandlung')}</th>
               )}
-              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-36">Amount ({currency})</th>
+              <th className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] w-36">{t('lineItems.amount', 'Amount')} ({currency})</th>
               {!readOnly && <th className="w-8" />}
             </tr>
           </thead>
@@ -182,7 +190,7 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
                         onChange={e => onProductSelect(idx, e.target.value)}
                         className="w-full text-xs bg-transparent outline-none focus:ring-1 focus:ring-[var(--primary)] rounded px-1 py-0.5"
                       >
-                        <option value="">— none —</option>
+                        <option value="">{t('common.noneOption', '— none —')}</option>
                         {products.map(p => (
                           <option key={p.id} value={p.id}>{p.code ? `${p.code} — ` : ""}{p.name}</option>
                         ))}
@@ -200,7 +208,7 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
                     <input
                       value={line.description}
                       onChange={e => update(idx, { description: e.target.value })}
-                      placeholder="Description"
+                      placeholder={t('lineItems.description', 'Description')}
                       className="w-full bg-transparent outline-none focus:ring-1 focus:ring-[var(--primary)] rounded px-1 py-0.5 text-sm"
                     />
                   )}
@@ -346,11 +354,11 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
                     onClick={add}
                     className="flex items-center gap-1 text-xs text-[var(--primary)] font-bold hover:underline"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Add Row
+                    <Plus className="w-3.5 h-3.5" /> {t('lineItems.addRow', 'Add Row')}
                   </button>
                 )}
               </td>
-              <td className="px-3 py-2 text-right text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Subtotal</td>
+              <td className="px-3 py-2 text-right text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('lineItems.subtotal', 'Subtotal')}</td>
               <td className="px-3 py-2 text-right font-mono font-bold">{fmt(subtotal)}</td>
               {!readOnly && <td />}
             </tr>
@@ -362,13 +370,13 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
       <div className="md:hidden space-y-3 p-3 bg-[var(--bg-page)]/40">
         {lines.length === 0 && (
           <p className="text-center text-xs text-[var(--text-muted)] py-4">
-            No line items. {!readOnly && "Tap Add Row to begin."}
+            {t('common.noLineItems', 'No line items.')} {!readOnly && t('common.tapAddRow', 'Tap Add Row to begin.')}
           </p>
         )}
         {lines.map((line, idx) => (
           <div key={idx} className="border border-[var(--border)] rounded-xl p-3 bg-white space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Line {idx + 1}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('common.line', 'Line')} {idx + 1}</span>
               {!readOnly && (
                 <button type="button" onClick={() => remove(idx)} className="text-red-400 hover:text-red-600 p-1">
                   <Trash2 className="w-4 h-4" />
@@ -377,7 +385,7 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
             </div>
             {hasProducts && (
               <div>
-                <label className={labelCls}>Product</label>
+                <label className={labelCls}>{t('lineItems.product', 'Product')}</label>
                 {readOnly ? (
                   <span className="text-sm">{products.find(p => p.id === line.product_id)?.name ?? "—"}</span>
                 ) : (
@@ -386,7 +394,7 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
                     onChange={e => onProductSelect(idx, e.target.value)}
                     className={fieldCls}
                   >
-                    <option value="">— none —</option>
+                    <option value="">{t('common.noneOption', '— none —')}</option>
                     {products.map(p => (
                       <option key={p.id} value={p.id}>{p.code ? `${p.code} — ` : ""}{p.name}</option>
                     ))}
@@ -398,21 +406,21 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
               </div>
             )}
             <div>
-              <label className={labelCls}>Description</label>
+              <label className={labelCls}>{t('lineItems.description', 'Description')}</label>
               {readOnly ? (
                 <span className="text-sm">{line.description}</span>
               ) : (
                 <input
                   value={line.description}
                   onChange={e => update(idx, { description: e.target.value })}
-                  placeholder="Description"
+                  placeholder={t('lineItems.description', 'Description')}
                   className={fieldCls}
                 />
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Qty</label>
+                <label className={labelCls}>{t('lineItems.qty', 'Qty')}</label>
                 {readOnly ? (
                   <span className="font-mono text-sm">{line.qty}</span>
                 ) : (
@@ -425,7 +433,7 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
                 )}
               </div>
               <div>
-                <label className={labelCls}>Unit</label>
+                <label className={labelCls}>{t('lineItems.unit', 'Unit')}</label>
                 {readOnly || line.product_id ? (
                   <span className="text-sm text-[var(--text-muted)]">{line.unit ?? "—"}</span>
                 ) : (
@@ -439,7 +447,7 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
                 )}
               </div>
               <div>
-                <label className={labelCls}>Rate ({currency})</label>
+                <label className={labelCls}>{t('lineItems.rate', 'Rate')} ({currency})</label>
                 {readOnly ? (
                   <span className="font-mono text-sm">{fmt(line.rate)}</span>
                 ) : (
@@ -453,7 +461,7 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
               </div>
               {!hideDiscount && (
               <div>
-                <label className={labelCls}>Disc %</label>
+                <label className={labelCls}>{t('lineItems.discPct', 'Disc %')}</label>
                 {readOnly ? (
                   <span className="font-mono text-sm">{(line.discount_pct ?? 0) > 0 ? `${line.discount_pct}%` : "—"}</span>
                 ) : (
@@ -469,7 +477,7 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
             </div>
             {hasTax && (
               <div>
-                <label className={labelCls}>Tax</label>
+                <label className={labelCls}>{t('lineItems.tax', 'Tax')}</label>
                 {readOnly ? (
                   <span className="text-sm">{taxCodes.find(t => t.id === line.tax_code_id)?.code ?? "—"}</span>
                 ) : (
@@ -478,7 +486,7 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
                     onChange={e => update(idx, { tax_code_id: e.target.value ? Number(e.target.value) : null })}
                     className={fieldCls}
                   >
-                    <option value="">— none —</option>
+                    <option value="">{t('common.noneOption', '— none —')}</option>
                     {taxCodes.map(t => (
                       <option key={t.id} value={t.id}>{t.code} ({t.rate}%)</option>
                     ))}
@@ -488,7 +496,7 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
             )}
             {hasTaxTreatment && (
               <div>
-                <label className={labelCls}>AT-Steuerbehandlung</label>
+                <label className={labelCls}>{t('col.taxTreatment', 'AT-Steuerbehandlung')}</label>
                 {readOnly ? (
                   <span className="text-sm">{taxTreatments.find(t => t.code === line.tax_treatment_code)?.label ?? "Standard des Belegs"}</span>
                 ) : (
@@ -500,7 +508,7 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
               </div>
             )}
             <div className="flex justify-between items-center pt-1 border-t border-[var(--border)]">
-              <span className={labelCls + " mb-0"}>Amount</span>
+              <span className={labelCls + " mb-0"}>{t('lineItems.amount', 'Amount')}</span>
               <span className="font-mono font-bold text-sm">{fmt(line.amount)}</span>
             </div>
           </div>
@@ -512,10 +520,10 @@ export default function LineItemsTable({ lines, onChange, products = [], taxCode
               onClick={add}
               className="flex items-center gap-1 text-xs text-[var(--primary)] font-bold"
             >
-              <Plus className="w-3.5 h-3.5" /> Add Row
+              <Plus className="w-3.5 h-3.5" /> {t('lineItems.addRow', 'Add Row')}
             </button>
           ) : <span />}
-          <span className="text-sm font-bold font-mono">Subtotal {fmt(subtotal)}</span>
+          <span className="text-sm font-bold font-mono">{t('lineItems.subtotal', 'Subtotal')} {fmt(subtotal)}</span>
         </div>
       </div>
     </div>

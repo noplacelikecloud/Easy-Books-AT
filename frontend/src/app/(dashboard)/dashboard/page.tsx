@@ -204,7 +204,7 @@ function DashboardInner() {
                     : "text-[var(--text-primary)]/60 hover:text-[var(--text-primary)]"
                 }`}
               >
-                Financial
+                {t('nav.Financial', 'Financial')}
               </button>
               <button
                 type="button"
@@ -215,7 +215,7 @@ function DashboardInner() {
                     : "text-[var(--text-primary)]/60 hover:text-[var(--text-primary)]"
                 }`}
               >
-                Operations
+                {t('nav.Operations', 'Operations')}
               </button>
             </div>
           )}

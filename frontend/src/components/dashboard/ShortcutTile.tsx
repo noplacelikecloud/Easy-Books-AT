@@ -18,7 +18,7 @@ export default function ShortcutTile({ id, model, role, editing, metric }: {
   if (!item) {
     return (
       <div className="h-full flex items-center justify-center bg-white border border-[var(--border)] rounded-xl text-[10px] text-[var(--text-primary)]/40 text-center p-2">
-        Unavailable
+        {t('common.unavailable', 'Unavailable')}
       </div>
     )
   }
@@ -30,7 +30,7 @@ export default function ShortcutTile({ id, model, role, editing, metric }: {
   const inner = (
     <div className="h-full flex flex-col items-center justify-center gap-1.5 bg-white border border-[var(--border)] rounded-xl p-2 text-center hover:border-[var(--primary)]/50 transition-colors">
       <Icon className="w-6 h-6 text-[var(--primary)]" />
-      <span className="text-[11px] font-medium text-[var(--text-primary)]/80 leading-tight">{item.label}</span>
+      <span className="text-[11px] font-medium text-[var(--text-primary)]/80 leading-tight">{t(`nav.${item.label}`, item.label)}</span>
       {metric && <span className="text-sm font-bold text-[var(--text-primary)] leading-none truncate max-w-full">{metric.value}</span>}
       {metric?.badge && (
         <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${toneClass}`}>{metric.badge}</span>

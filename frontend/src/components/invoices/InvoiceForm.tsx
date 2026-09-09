@@ -10,6 +10,7 @@ import { usePRAPortal } from '@/hooks/usePRAPortal'
 import LineItemsTable, { LineItem, TaxCodeOption, TaxTreatmentOption } from '@/components/LineItemsTable'
 import { CustomFieldsInputs, type CustomFieldValues } from '@/components/studio/CustomFieldsInputs'
 import { useFormSchema } from '@/components/studio/formSchema'
+import { useTranslation } from 'react-i18next'
 
 export interface InvoiceFull {
   id: number
@@ -116,6 +117,7 @@ interface Props {
 }
 
 export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved, onCancel }: Props) {
+  const { t } = useTranslation()
   const fmt = useFmt()
   const { isPortal } = usePRAPortal()
   const { settings } = useSettings()
@@ -389,7 +391,7 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">Customer</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">{t('common.customer', 'Customer')}</label>
             <select value={form.customer_id}
               onChange={e => {
                 const c = customers.find(c => c.id === parseInt(e.target.value))
@@ -408,21 +410,21 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
                 }
               }}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm">
-              <option value="">— Select or type name —</option>
+              <option value="">{t('common.selectOption', '— Select or type name —')}</option>
               {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             {customerBalance !== null && customerBalance > 0 && (
-              <p className="text-xs text-amber-700 mt-1 font-medium">Outstanding balance: {fmt(customerBalance)}</p>
+              <p className="text-xs text-amber-700 mt-1 font-medium">{t('invoices.outstandingBalance', 'Outstanding balance:')} {fmt(customerBalance)}</p>
             )}
           </div>
           {vis('customer_name') && (
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">
-              Customer Name
+              {t('common.customerName', 'Customer Name')}
               {req('customer_name') ? <span className="text-red-600"> *</span> : null}
             </label>
             <input value={form.customer_name} onChange={e => setForm(p => ({ ...p, customer_name: e.target.value }))}
-              placeholder="or type manually"
+              placeholder={t('common.orTypeManually', 'or type manually')}
               required={req('customer_name')}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm" />
           </div>
@@ -441,19 +443,19 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
                 }))}
                 className="rounded border-[var(--border)]"
               />
-              Intercompany invoice
+              {t('invoices.intercompanyInvoice', 'Intercompany invoice')}
             </label>
             {form.is_intercompany && (
               <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">
-                  IC Counterparty
+                  {t('invoices.icCounterparty', 'IC Counterparty')}
                 </label>
                 <select
                   value={form.ic_counterparty_tenant_id}
                   onChange={e => setForm(p => ({ ...p, ic_counterparty_tenant_id: e.target.value }))}
                   className="w-full px-3 py-2 bg-white rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm"
                 >
-                  <option value="">— Select entity —</option>
+                  <option value="">{t('common.selectOption', '— Select entity —')}</option>
                   {icCounterparties.map(c => (
                     <option key={c.tenant_id} value={c.tenant_id}>{c.name}</option>
                   ))}
@@ -498,13 +500,13 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">Issue Date</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">{t('col.issueDate', 'Issue Date')}</label>
             <input type="date" value={form.issue_date} onChange={e => setForm(p => ({ ...p, issue_date: e.target.value }))}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm" />
           </div>
           {vis('payment_term_id') && (
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">Payment Term</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">{t('common.paymentTerm', 'Payment Term')}</label>
             <select
               value={form.payment_term_id}
               onChange={e => {
@@ -519,7 +521,7 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
               }}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm"
             >
-              <option value="">— select —</option>
+              <option value="">{t('common.selectOption', '— select —')}</option>
               {paymentTerms.map(t => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
@@ -527,7 +529,7 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
           </div>
           )}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">Due Date</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">{t('col.dueDate', 'Due Date')}</label>
             <input type="date" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm" />
           </div>
@@ -536,16 +538,16 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">
-                Payment Mode
+                {t('invoices.paymentMode', 'Payment Mode')}
               </label>
               <select value={form.payment_mode} onChange={e => setForm(p => ({ ...p, payment_mode: e.target.value }))}
                 className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm">
-                <option value="1">Cash</option>
-                <option value="2">Card / Bank Transfer</option>
-                <option value="3">Gift Voucher</option>
-                <option value="4">Loyalty Card</option>
-                <option value="5">Mixed</option>
-                <option value="6">Cheque</option>
+                <option value="1">{t('invoices.paymentModeCash', 'Cash')}</option>
+                <option value="2">{t('invoices.paymentModeCard', 'Card / Bank Transfer')}</option>
+                <option value="3">{t('invoices.paymentModeVoucher', 'Gift Voucher')}</option>
+                <option value="4">{t('invoices.paymentModeLoyalty', 'Loyalty Card')}</option>
+                <option value="5">{t('invoices.paymentModeMixed', 'Mixed')}</option>
+                <option value="6">{t('invoices.paymentModeCheque', 'Cheque')}</option>
               </select>
             </div>
           </div>
@@ -555,21 +557,21 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
           {vis('description') && (
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">
-              Description
+              {t('common.description', 'Description')}
               {req('description') ? <span className="text-red-600"> *</span> : null}
             </label>
             <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-              placeholder="e.g. Consulting services — May 2026"
+              placeholder={t('invoices.descriptionPlaceholder', 'e.g. Consulting services — May 2026')}
               required={req('description')}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm" />
           </div>
           )}
           {vis('assigned_to_id') && (
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">Sales Person <span className="font-normal normal-case text-[var(--text-primary)]/40">(optional)</span></label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">{t('invoices.salesPerson', 'Sales Person')} <span className="font-normal normal-case text-[var(--text-primary)]/40">({t('common.optional', 'optional')})</span></label>
             <select value={form.assigned_to_id} onChange={e => setForm(p => ({ ...p, assigned_to_id: e.target.value }))}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm">
-              <option value="">None</option>
+              <option value="">{t('common.noneOption', 'None')}</option>
               {staff.map(s => <option key={s.id} value={s.id}>{s.name} — {s.email.split("@")[0]}</option>)}
             </select>
           </div>
@@ -580,16 +582,16 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">
-                Payment Mode
+                {t('invoices.paymentMode', 'Payment Mode')}
               </label>
               <select value={form.payment_mode} onChange={e => setForm(p => ({ ...p, payment_mode: e.target.value }))}
                 className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm">
-                <option value="1">Cash</option>
-                <option value="2">Card / Bank Transfer</option>
-                <option value="3">Gift Voucher</option>
-                <option value="4">Loyalty Card</option>
-                <option value="5">Mixed</option>
-                <option value="6">Cheque</option>
+                <option value="1">{t('invoices.paymentModeCash', 'Cash')}</option>
+                <option value="2">{t('invoices.paymentModeCard', 'Card / Bank Transfer')}</option>
+                <option value="3">{t('invoices.paymentModeVoucher', 'Gift Voucher')}</option>
+                <option value="4">{t('invoices.paymentModeLoyalty', 'Loyalty Card')}</option>
+                <option value="5">{t('invoices.paymentModeMixed', 'Mixed')}</option>
+                <option value="6">{t('invoices.paymentModeCheque', 'Cheque')}</option>
               </select>
             </div>
           </div>
@@ -633,12 +635,12 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">Line Items</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75">{t('common.lineItems', 'Line Items')}</label>
             <div className="flex items-center gap-2">
               {promoMsg && <span className="text-xs text-[var(--primary)]">{promoMsg}</span>}
               <button type="button" onClick={handleApplyPromos} disabled={applyingPromos || lines.length === 0}
                 className="px-3 py-1.5 text-xs font-semibold bg-[var(--bg-page)] border border-[var(--primary)]/40 text-[var(--primary)] rounded-lg hover:bg-[var(--primary)]/10 disabled:opacity-40 transition-colors">
-                {applyingPromos ? "Checking…" : "Apply Promos"}
+                {applyingPromos ? t('common.checking', 'Checking…') : t('invoices.applyPromos', 'Apply Promos')}
               </button>
             </div>
           </div>
@@ -647,11 +649,11 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
 
         <div className="bg-[var(--bg-page)] rounded-xl p-4 space-y-1 text-sm">
           <div className="flex justify-between">
-            <span className="text-[var(--text-muted)]">Subtotal</span>
+            <span className="text-[var(--text-muted)]">{t('common.subtotal', 'Subtotal')}</span>
             <span className="font-mono">{fmt(subtotal)}</span>
           </div>
           <div className="flex justify-between items-center gap-2">
-            <span className="text-[var(--text-muted)]">Tax</span>
+            <span className="text-[var(--text-muted)]">{t('common.tax', 'Tax')}</span>
             {atActive ? (
               <span className="font-mono text-xs text-[var(--text-muted)]">(nach AT-Steuerbehandlung) {fmt(gstAmount)}</span>
             ) : usePerLineTax ? (
@@ -671,12 +673,12 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
             )}
           </div>
           <div className="flex justify-between border-t border-[var(--border)] pt-2 font-bold">
-            <span>Total ({form.currency})</span>
+            <span>{t('common.total', 'Total')} ({form.currency})</span>
             <span className="font-mono text-[var(--text-primary)]">{fmt(totalAmount)}</span>
           </div>
           {form.currency !== settings.currency && parseFloat(form.exchange_rate) > 0 && (
             <div className="flex justify-between text-xs text-[var(--text-muted)]">
-              <span>≈ {settings.currency} equivalent</span>
+              <span>≈ {settings.currency} {t('common.equivalent', 'equivalent')}</span>
               <span className="font-mono">{fmt(Math.round(totalAmount * parseFloat(form.exchange_rate) * 100) / 100)}</span>
             </div>
           )}
@@ -687,20 +689,20 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
           {vis('notes') && (
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-[var(--text-primary)]/75 mb-1">
-              Notes (printed)
+              {t('common.notes', 'Notes')} (printed)
               {req('notes') ? <span className="text-red-600"> *</span> : null}
             </label>
             <textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-              placeholder="Printed on the invoice for the customer"
+              placeholder={t('common.notesPlaceholder', 'Printed on the invoice for the customer')}
               required={req('notes')}
               className="w-full px-3 py-2 bg-[var(--bg-page)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] text-sm resize-none" />
           </div>
           )}
           {vis('internal_memo') && (
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-amber-700/70 mb-1">Internal Memo</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-amber-700/70 mb-1">{t('common.internalMemo', 'Internal Memo')}</label>
             <textarea rows={2} value={form.internal_memo} onChange={e => setForm(p => ({ ...p, internal_memo: e.target.value }))}
-              placeholder="Staff-only note, not printed"
+              placeholder={t('common.internalMemoPlaceholder', 'Staff-only note, not printed')}
               className="w-full px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-400 text-sm resize-none" />
           </div>
           )}
@@ -716,31 +718,31 @@ export default function InvoiceForm({ mode, invoice, initialCustomerId, onSaved,
         {formError && <p className="text-red-600 text-sm">{formError}</p>}
         {confirmPostedEdit && (
           <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 text-sm text-amber-900">
-            <p className="font-semibold mb-1">Confirm posted-invoice edit</p>
-            <p className="mb-3">This will reverse the original ledger entry and post a correction, keeping the same document number. Continue?</p>
+            <p className="font-semibold mb-1">{t('invoices.confirmPostedEditTitle', 'Confirm posted-invoice edit')}</p>
+            <p className="mb-3">{t('invoices.confirmPostedEditMsg', 'This will reverse the original ledger entry and post a correction, keeping the same document number. Continue?')}</p>
             <div className="flex gap-2">
               <button
                 onClick={handleSave}
                 disabled={saving}
                 className="px-4 py-2 bg-amber-700 text-white rounded-lg font-bold hover:bg-amber-800 disabled:opacity-50 text-xs"
               >
-                {saving ? 'Saving…' : 'Yes, post correction'}
+                {saving ? t('common.saving', 'Saving…') : t('invoices.yesPostCorrection', 'Yes, post correction')}
               </button>
               <button
                 onClick={() => setConfirmPostedEdit(false)}
                 className="px-4 py-2 border border-amber-400 text-amber-800 rounded-lg font-bold hover:bg-amber-100 text-xs"
               >
-                Cancel
+                {t('common.cancel', 'Cancel')}
               </button>
             </div>
           </div>
         )}
-        <p className="text-xs text-[var(--text-muted)]">GL posting: Dr Accounts Receivable / Cr Revenue / Cr GST Payable</p>
+        <p className="text-xs text-[var(--text-muted)]">{t('invoices.glPostingHint', 'GL posting: Dr Accounts Receivable / Cr Revenue / Cr GST Payable')}</p>
         <div className="flex justify-end gap-3 pt-2">
-          <button onClick={() => { setConfirmPostedEdit(false); onCancel() }} className="px-6 py-3 border border-[var(--text-primary)]/10 rounded-xl font-bold hover:bg-[var(--bg-page)]">Cancel</button>
+          <button onClick={() => { setConfirmPostedEdit(false); onCancel() }} className="px-6 py-3 border border-[var(--text-primary)]/10 rounded-xl font-bold hover:bg-[var(--bg-page)]">{t('common.cancel', 'Cancel')}</button>
           {!confirmPostedEdit && (
             <button onClick={handleSave} disabled={saving} className="px-6 py-3 bg-[var(--text-primary)] text-white rounded-xl font-bold hover:bg-[var(--primary)] hover:text-black transition-all disabled:opacity-50">
-              {saving ? 'Saving…' : mode === 'edit' ? 'Save Changes' : 'Post Invoice'}
+              {saving ? t('common.saving', 'Saving…') : mode === 'edit' ? t('common.saveChanges', 'Save Changes') : t('invoices.postInvoice', 'Post Invoice')}
             </button>
           )}
         </div>

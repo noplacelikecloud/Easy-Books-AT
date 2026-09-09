@@ -348,3 +348,24 @@ def test_type_defaults_from_parent(client, admin_headers):
     })
     assert r.status_code == 200, r.text
     assert r.json()["type"] == "Liability"
+
+
+def test_delete_parent_account_with_children_blocked(client, admin_headers):
+    """Deleting an account class/group that has child accounts must return 400, not 500."""
+    h = admin_headers
+    parent = _acct(client, h, "8900", "Parent Group", is_group=True)
+    child = _acct(client, h, "8901", "Child Under Group", parent_id=parent["id"])
+
+    # Try deleting parent while child exists
+    r = client.delete(f"/api/accounts/{parent['id']}", headers=h)
+    assert r.status_code == 400, f"Expected 400, got {r.status_code}: {r.text}"
+    assert "sub-accounts" in r.text or "children" in r.text
+
+    # Delete child first
+    r_del_child = client.delete(f"/api/accounts/{child['id']}", headers=h)
+    assert r_del_child.status_code == 200, r_del_child.text
+
+    # Now parent can be deleted
+    r_del_parent = client.delete(f"/api/accounts/{parent['id']}", headers=h)
+    assert r_del_parent.status_code == 200, r_del_parent.text
+

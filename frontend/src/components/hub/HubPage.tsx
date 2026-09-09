@@ -72,9 +72,11 @@ export default function HubPage({ config }: { config: HubConfig }) {
       <div className="flex items-start justify-between mb-6">
         <div>
           <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--primary)] mb-0.5">
-            {config.section}
+            {t(`section.${config.section}`, config.section)}
           </div>
-          <h1 className="text-3xl font-bold text-[var(--text-primary)]">{config.title}</h1>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)]">
+            {t(`hub.${config.title}`, config.title)}
+          </h1>
         </div>
         <config.icon className="w-10 h-10 text-[var(--primary)]/40 mt-1" />
       </div>
@@ -82,7 +84,7 @@ export default function HubPage({ config }: { config: HubConfig }) {
       {/* Error banner — action grid still renders below */}
       {error && (
         <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2 text-sm text-amber-800">
-          Could not load summary — data may be stale.
+          {t('hub.staleError', 'Could not load summary — data may be stale.')}
         </div>
       )}
 
@@ -105,7 +107,7 @@ export default function HubPage({ config }: { config: HubConfig }) {
                 {loading ? "—" : val !== null ? displayKpi(kpi, val) : "—"}
               </div>
               <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--text-primary)]/40 mt-1">
-                {kpi.label}
+                {t(`hub.${kpi.label}`, kpi.label)}
               </div>
             </div>
           )
@@ -152,7 +154,7 @@ export default function HubPage({ config }: { config: HubConfig }) {
                 action.primary ? "text-white" : "text-[var(--text-primary)]/70"
               )}
             >
-              {action.label}
+              {t(`nav.${action.label}`, t(`common.${action.label}`, t(`hub.${action.label}`, action.label)))}
             </span>
           </button>
         ))}

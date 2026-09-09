@@ -12,16 +12,16 @@ function NewBillContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const vendorId = searchParams.get('vendor_id')
-  useBreadcrumb('New Bill')
   const { t } = useTranslation()
+  useBreadcrumb(t('bills.newBill', 'New Bill'))
   return (
     <div className="space-y-6">
       <div>
         <Link href="/bills" className="inline-flex items-center gap-1 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] mb-2">
-          <ArrowLeft className="w-4 h-4" /> Bills
+          <ArrowLeft className="w-4 h-4" /> {t('bills.title', 'Bills')}
         </Link>
-        <h1 className="text-xl sm:text-3xl font-bold">New Bill</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-1">Record a vendor bill / purchase liability</p>
+        <h1 className="text-xl sm:text-3xl font-bold">{t('bills.newBill', 'New Bill')}</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-1">{t('bills.newBillSubtitle', 'Record a vendor bill / purchase liability')}</p>
       </div>
       <BillForm
         mode="create"
