@@ -55,6 +55,7 @@ mobile/android/.gradle/
 mobile/android/app/build/
 mobile/ios/App/Pods/
 mobile/ios/App/build/
+node_modules/
 
 # Session tooling scratch (brainstorm server state, handoff notes)
 .superpowers/
